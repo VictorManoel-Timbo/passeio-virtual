@@ -1,0 +1,79 @@
+@import url('https://fonts.googleapis.com/css2?family=Amarante&display=swap');
+
+:root {
+    color-scheme: light dark;
+    --bg-color: light-dark(snow, #16171a);
+    --border_color: light-dark(slategray, #3f3f3f);
+    --text-color: light-dark(#242424, snow);
+}
+
+*, html {
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    display: flex;
+    margin: 0;
+    min-height: 100vh;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    font-family: "Amarante", serif;
+    font-weight: 400;
+    font-style: normal;
+}
+
+header {
+    font-size: xx-large;
+}
+
+
+canvas {
+    border: 2px solid var(--border_color);
+    border-radius: 16px;
+    box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
+}
+
+.conteiner {
+    flex: 1; 
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    align-items: center;
+    justify-content: space-evenly;
+}
+
+.content {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 1vw;
+}
+
+.controls {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.producer {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3vh;
+    font-size: x-large;
+}
+
+#authors {
+    list-style: none;
+    text-align: center;
+}
+
+#authors li {
+    margin-bottom: 20px;
+}
+
