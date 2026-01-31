@@ -25,7 +25,7 @@ class App {
     const text = await response.text();
 
     const objDoc = new OBJDoc(url);
-    objDoc.parse(text, 1.0, false);
+    await objDoc.parse(text, 1.0, false);
 
     // Aguarda carregar os materiais (.mtl)
     while (!objDoc.isMTLComplete()) {
@@ -64,9 +64,18 @@ class App {
             varying vec4 v_Color;
             void main() {
                 gl_Position = u_MvpMatrix * a_Position;
+    
                 vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
-                float nDotL = max(dot(normal, vec3(1.5, 1.7, 5.0)), 0.0);
-                v_Color = vec4(a_Color.rgb * nDotL + a_Color.rgb * 0.2, a_Color.a);
+                
+                // Luz Zenital
+                vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0)); 
+                
+                float nDotL = max(dot(normal, lightDir), 0.0);
+                
+                vec3 ambient = a_Color.rgb * 0.1; 
+                vec3 diffuse = a_Color.rgb * nDotL * 25.0;
+
+                v_Color = vec4(diffuse + ambient, a_Color.a);
             }
         `;
     const fsSource = `
@@ -106,13 +115,11 @@ class App {
       const rotY = Transform.rotateY(this.angleY);
       const rotZ = Transform.rotateZ(this.angleZ);
 
-      //let modelMatrix = Transform.identity(); // Adicione rotação aqui
       let modelMatrix = Transform.multiplyMatrices(rotY, rotX);
       modelMatrix = Transform.multiplyMatrices(modelMatrix, rotZ);
 
       const mvpMatrix = Transform.multiplyMatrices(viewProjMatrix, modelMatrix);
 
-      this.gl.uniformMatrix4fv(this.locations.u_MvpMatrix, false, mvpMatrix); // Verificar se pode usar
       mesh.draw(this.gl, this.locations, viewProjMatrix, modelMatrix);
     });
 

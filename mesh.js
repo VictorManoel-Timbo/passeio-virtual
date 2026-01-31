@@ -20,10 +20,12 @@ export class Mesh {
     }
 
     draw(gl, locations, viewProjMatrix, modelMatrix) {
-        // Enviar matrizes
-        gl.uniformMatrix4fv(locations.u_ModelMatrix, false, modelMatrix); // Verificar se pode usar
+        // 1. Enviar a MVP Matrix para posicionar os vértices
+        const mvpMatrix = Transform.multiplyMatrices(viewProjMatrix, modelMatrix);
+        gl.uniformMatrix4fv(locations.u_MvpMatrix, false, mvpMatrix);
 
-        // Cálculo manual da Matriz Normal (Inversa Transposta) para o Motor
+        // 2. CALCULAR A MATRIZ NORMAL (Usando a sua nova função inverse!)
+        // Isso garante que a normal aponte para o lado certo mesmo após girar
         const normalMatrix = Transform.getNormalMatrix(modelMatrix);
         gl.uniformMatrix4fv(locations.u_NormalMatrix, false, normalMatrix);
 
