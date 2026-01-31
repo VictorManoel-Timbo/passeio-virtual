@@ -1,4 +1,37 @@
 export class Transform {
+
+  static lookAt(eye, center, up) {
+    const zx = eye[0] - center[0];
+    const zy = eye[1] - center[1];
+    const zz = eye[2] - center[2];
+
+    let zlen = Math.hypot(zx, zy, zz);
+    const z = [zx / zlen, zy / zlen, zz / zlen];
+
+    const xx = up[1] * z[2] - up[2] * z[1];
+    const xy = up[2] * z[0] - up[0] * z[2];
+    const xz = up[0] * z[1] - up[1] * z[0];
+
+    let xlen = Math.hypot(xx, xy, xz);
+    const x = [xx / xlen, xy / xlen, xz / xlen];
+
+    const y = [
+      z[1] * x[2] - z[2] * x[1],
+      z[2] * x[0] - z[0] * x[2],
+      z[0] * x[1] - z[1] * x[0]
+    ];
+
+    return new Float32Array([
+      x[0], y[0], z[0], 0,
+      x[1], y[1], z[1], 0,
+      x[2], y[2], z[2], 0,
+      -(x[0] * eye[0] + x[1] * eye[1] + x[2] * eye[2]),
+      -(y[0] * eye[0] + y[1] * eye[1] + y[2] * eye[2]),
+      -(z[0] * eye[0] + z[1] * eye[1] + z[2] * eye[2]),
+      1
+    ]);
+  }
+  
   // Cria uma matriz identidade (não transforma nada)
   static identity() {
     return new Float32Array([

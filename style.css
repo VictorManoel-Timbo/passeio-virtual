@@ -7,73 +7,137 @@
     --text-color: light-dark(#242424, snow);
 }
 
-*, html {
+*,
+*::before,
+*::after {
     margin: 0;
     padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    display: flex;
-    margin: 0;
     min-height: 100vh;
     background-color: var(--bg-color);
     color: var(--text-color);
     font-family: "Amarante", serif;
-    font-weight: 400;
-    font-style: normal;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: flex-start;
+}
+
+.conteiner {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 20px;
+    order: 1;
 }
 
 header {
     font-size: xx-large;
-}
-
-
-canvas {
-    border: 2px solid var(--border_color);
-    border-radius: 16px;
-    box-shadow: 5px 5px 15px rgba(0,0,0,0.5);
-}
-
-.conteiner {
-    flex: 1; 
-    display: flex;
-    flex-direction: column;
-    padding: 16px;
-    align-items: center;
-    justify-content: space-evenly;
+    margin-bottom: 20px;
+    text-align: center;
 }
 
 .content {
     width: 100%;
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 1vw;
 }
 
+canvas {
+    width: 95vw;
+    height: auto;
+    max-width: 1256px;
+    max-height: 942px;
+    border: 2px solid var(--border_color);
+    border-radius: 16px;
+    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+    background-color: #000;
+}
+
+/* --- SEÇÕES INFERIORES (AUTORES E CONTROLES) --- */
+
+.producer,
 .controls {
-    width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-}
-
-.producer {
-    width: 100%;
+    flex: 1;
+    /* Faz ambos dividirem o espaço disponível */
+    min-width: 300px;
+    /* Impede que fiquem espremidos demais */
+    padding: 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 3vh;
-    font-size: x-large;
+    text-align: center;
+}
+
+.producer {
+    order: 2;
+}
+
+.controls {
+    order: 3;
 }
 
 #authors {
     list-style: none;
-    text-align: center;
+    margin-top: 15px;
 }
 
 #authors li {
     margin-bottom: 20px;
+    font-size: large;
 }
 
+h2 {
+    font-size: x-large;
+    margin-bottom: 16px;
+}
+
+/* --- AJUSTES PARA TELAS GRANDES (ACIMA DE 1440px) --- */
+@media (min-width: 1441px) {
+    body {
+        flex-wrap: nowrap;
+        /* Volta a ficar tudo em uma linha só */
+        align-items: center;
+    }
+
+    .conteiner {
+        width: auto;
+        flex: 2;
+        order: 2;
+        /* Canvas no centro */
+    }
+
+    .producer {
+        width: 250px;
+        flex: none;
+        order: 1;
+        /* Autores na esquerda */
+    }
+
+    .controls {
+        width: 250px;
+        flex: none;
+        order: 3;
+        /* Controles na direita */
+    }
+
+    canvas {
+        width: 1256px;
+        height: 768px;
+        /* Tamanho fixo ideal em telas gigantes */
+    }
+}
+
+/* --- AJUSTE PARA CELULARES (ABAIXO DE 768px) --- */
+@media (max-width: 768px) {
+
+    .producer,
+    .controls {
+        width: min(100%, 768px);
+    }
+}

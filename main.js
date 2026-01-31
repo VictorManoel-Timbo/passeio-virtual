@@ -15,7 +15,8 @@ class App {
 
     // Defina matrizes iniciais para a câmera
     this.projMatrix = Transform.perspective(45, this.canvas.width / this.canvas.height, 0.1, 1000);
-    this.viewMatrix = Transform.translate(Transform.identity(), 0, 0, -5);
+    this.cameraPos = [0, 0, 15]; // Posição inicial
+    this.viewMatrix = Transform.lookAt(this.cameraPos, [0, 0, 0], [0, 1, 0]);
 
     this._initShaders();
   }
@@ -67,7 +68,6 @@ class App {
     
                 vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
                 
-                // Luz Zenital
                 vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0)); 
                 
                 float nDotL = max(dot(normal, lightDir), 0.0);
