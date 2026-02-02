@@ -73,7 +73,7 @@ class App {
                 float nDotL = max(dot(normal, lightDir), 0.0);
                 
                 vec3 ambient = a_Color.rgb * 0.1; 
-                vec3 diffuse = a_Color.rgb * nDotL * 25.0;
+                vec3 diffuse = a_Color.rgb * nDotL * 15.0;
 
                 v_Color = vec4(diffuse + ambient, a_Color.a);
             }
@@ -86,10 +86,10 @@ class App {
     // ... função de compilar shaders aqui ...
     this.program = this.createProgram(vsSource, fsSource);
     this.locations = {
-      a_Position: this.gl.getAttribLocation(this.program, 'a_Position'),  // Verificar se pode usar
+      a_Position: this.gl.getAttribLocation(this.program, 'a_Position'), 
       a_Color: this.gl.getAttribLocation(this.program, 'a_Color'),
       a_Normal: this.gl.getAttribLocation(this.program, 'a_Normal'),
-      u_MvpMatrix: this.gl.getUniformLocation(this.program, 'u_MvpMatrix'), // Verificar se pode usar
+      u_MvpMatrix: this.gl.getUniformLocation(this.program, 'u_MvpMatrix'),
       u_NormalMatrix: this.gl.getUniformLocation(this.program, 'u_NormalMatrix')
     };
   }

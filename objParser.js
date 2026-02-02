@@ -1,5 +1,5 @@
 import { StringParser } from "./stringParser.js";
-import { calcNormal } from "./utils.js";
+import { calcNormal } from "./utils/utils.js";
 
 /**
  * Classes de Suporte para a Estrutura do Modelo
