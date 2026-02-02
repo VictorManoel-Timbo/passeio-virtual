@@ -6,7 +6,7 @@ export class Camera {
         this.canvas = gl.canvas;
 
         // Estado da Câmera
-        this.position = [0, 0, 15];
+        this.position = [0, 5, 15];
         this.yaw = -90;
         this.pitch = 0;
 
@@ -46,7 +46,7 @@ export class Camera {
 
     update(deltaTime, keys) {
         if (!keys) return;
-        
+
         const moveSpeed = 5.0 * deltaTime;
         const rotationSpeed = 90.0 * deltaTime;
 
@@ -54,8 +54,8 @@ export class Camera {
         if (keys['d']) this.yaw += rotationSpeed;
 
         // Opcional: Adicionar Pitch (olhar para cima/baixo) com as setas
-        if (keys['arrowup']) this.pitch = Math.min(this.pitch + rotationSpeed, 89);
-        if (keys['arrowdown']) this.pitch = Math.max(this.pitch - rotationSpeed, -89);
+        if (keys['arrowup']) this.pitch = Math.min(this.pitch + rotationSpeed, 45);
+        if (keys['arrowdown']) this.pitch = Math.max(this.pitch - rotationSpeed, -45);
 
         const yawRad = this.yaw * Math.PI / 180;
 

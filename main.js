@@ -16,7 +16,6 @@ class App {
     this.angleX = 0; // Inicializa o ângulo
     this.angleY = 0;
     this.angleZ = 0;
-    this.lastTime = Date.now();
 
     this.keys = {}; // Garante que o objeto existe
 
@@ -28,9 +27,10 @@ class App {
       this.keys[e.key.toLowerCase()] = false;
     });
 
-    this.camera = new Camera(this.gl);
-
     this._initShaders();
+
+    this.camera = new Camera(this.gl);
+    this.lastTime = Date.now();
   }
 
   async loadModel(url) {
@@ -64,7 +64,13 @@ class App {
     gl.attachShader(prog, vShader);
     gl.attachShader(prog, fShader);
     gl.linkProgram(prog);
-    return prog;
+
+    if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
+      return prog;
+    }
+
+    alert("Erro de linguagem " + gl.getProgramInfoLog(prog));
+    gl.deleteProgram(prog);
   }
 
   _initShaders() {
@@ -153,7 +159,9 @@ class App {
     this.camera.update(deltaTime, this.keys);
 
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
-    this.gl.enable(this.gl.DEPTH_TEST);
+    this.gl.enable(this.gl.DEPTH_TEST); // Ativa Z-Buffer (Requisito)
+    this.gl.enable(this.gl.CULL_FACE);  // Ativa Back-face Culling (Requisito)
+    this.gl.cullFace(this.gl.BACK);
     this.gl.useProgram(this.program);
 
     /*this.angleX += 0.5 * deltaTime;
@@ -183,6 +191,7 @@ class App {
       let modelMatrix = Transform.identity();
 
       mesh.draw(this.gl, this.locations, viewProjMatrix, modelMatrix);
+
     });
 
     requestAnimationFrame(this.render);
@@ -194,5 +203,5 @@ class App {
 }
 
 const engine = new App();
-engine.loadModel("./models/caneca.obj");
+engine.loadModel("./assets/caneca.obj");
 engine.start();

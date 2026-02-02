@@ -34,7 +34,6 @@ export class Mesh {
         this._bindAttribute(locations.a_Color, this.colorBuffer, 4);
 
         // Desenho por Índices
-        gl.bindBuffer(gl.ELEMENT_ARRAY_BUFFER, this.indexBuffer);
         gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
     }
 
