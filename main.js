@@ -1,22 +1,34 @@
 import { OBJDoc } from "./objParser.js";
 import { Mesh } from "./mesh.js";
 import { Transform } from "./transform.js";
+import { Camera } from "./camera.js";
 
 class App {
   constructor() {
     this.canvas = document.getElementById('glCanvas');
     this.gl = this.canvas.getContext('webgl');
     if (!this.gl) alert("WebGL não suportado");
+
+    this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
+    this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
+
     this.renderList = [];
     this.angleX = 0; // Inicializa o ângulo
     this.angleY = 0;
     this.angleZ = 0;
-    this.lastTime = Date.now()
+    this.lastTime = Date.now();
 
-    // Defina matrizes iniciais para a câmera
-    this.projMatrix = Transform.perspective(45, this.canvas.width / this.canvas.height, 0.1, 1000);
-    this.cameraPos = [0, 0, 15]; // Posição inicial
-    this.viewMatrix = Transform.lookAt(this.cameraPos, [0, 0, 0], [0, 1, 0]);
+    this.keys = {}; // Garante que o objeto existe
+
+    // Registra as teclas pressionadas
+    window.addEventListener('keydown', e => {
+      this.keys[e.key.toLowerCase()] = true;
+    });
+    window.addEventListener('keyup', e => {
+      this.keys[e.key.toLowerCase()] = false;
+    });
+
+    this.camera = new Camera(this.gl);
 
     this._initShaders();
   }
@@ -56,41 +68,79 @@ class App {
   }
 
   _initShaders() {
-    const vsSource = `
+    const vsSource = /*glsl*/  `
             attribute vec4 a_Position;
+            attribute vec3 a_Normal;
             attribute vec4 a_Color;
-            attribute vec4 a_Normal;
-            uniform mat4 u_MvpMatrix;
-            uniform mat4 u_NormalMatrix;
-            varying vec4 v_Color;
-            void main() {
-                gl_Position = u_MvpMatrix * a_Position;
-    
-                vec3 normal = normalize(vec3(u_NormalMatrix * a_Normal));
-                
-                vec3 lightDir = normalize(vec3(0.0, 1.0, 0.0)); 
-                
-                float nDotL = max(dot(normal, lightDir), 0.0);
-                
-                vec3 ambient = a_Color.rgb * 0.1; 
-                vec3 diffuse = a_Color.rgb * nDotL * 15.0;
 
-                v_Color = vec4(diffuse + ambient, a_Color.a);
+            uniform mat4 u_MvpMatrix;
+            uniform mat4 u_ModelMatrix;
+            uniform mat4 u_NormalMatrix;
+
+            varying vec3 v_Normal;
+            varying vec3 v_Position;
+            varying vec4 v_Color;
+
+            void main() {
+              gl_Position = u_MvpMatrix * a_Position;
+              // Calcula a posição do vértice no mundo para a luz
+              v_Position = vec3(u_ModelMatrix * a_Position);
+              // Transforma a normal para o espaço do mundo corretamente
+              v_Normal = normalize(vec3(u_NormalMatrix * vec4(a_Normal, 0.0)));
+              v_Color = a_Color;
             }
         `;
-    const fsSource = `
+    const fsSource = /*glsl*/ `
             precision mediump float;
+
+            uniform vec3 u_LightPos;    // Posição da lâmpada
+            uniform vec3 u_ViewPos;     // Posição da câmera (this.cameraPos)
+            uniform vec3 u_LightColor;
+
+            varying vec3 v_Normal;
+            varying vec3 v_Position;
             varying vec4 v_Color;
-            void main() { gl_FragColor = v_Color; }
+
+            void main() {
+              // 1. Ambiental
+              float ambientStrength = 10.2;
+              vec3 ambient = ambientStrength * u_LightColor;
+
+              // 2. Difusa
+              float diffuseStrength = 10.8;
+              vec3 norm = normalize(v_Normal);
+              vec3 lightDir = normalize(u_LightPos - v_Position);
+              float diff = max(dot(norm, lightDir), 0.0);
+              vec3 diffuse = diff * diffuseStrength * u_LightColor;
+
+              // 3. Especular (O brilho de Phong)
+              float specularStrength = 1.5;
+              vec3 viewDir = normalize(u_ViewPos - v_Position);
+              vec3 reflectDir = reflect(-lightDir, norm); 
+              float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32.0); // 32 = brilho
+              vec3 specular = specularStrength * spec * u_LightColor;
+
+              vec3 result = (ambient + diffuse + specular) * v_Color.rgb;
+              gl_FragColor = vec4(result, v_Color.a);
+            }
         `;
     // ... função de compilar shaders aqui ...
     this.program = this.createProgram(vsSource, fsSource);
     this.locations = {
-      a_Position: this.gl.getAttribLocation(this.program, 'a_Position'), 
-      a_Color: this.gl.getAttribLocation(this.program, 'a_Color'),
+      // Atributos (Vertex Data)
+      a_Position: this.gl.getAttribLocation(this.program, 'a_Position'),
       a_Normal: this.gl.getAttribLocation(this.program, 'a_Normal'),
+      a_Color: this.gl.getAttribLocation(this.program, 'a_Color'),
+
+      // Uniforms (Matrizes)
       u_MvpMatrix: this.gl.getUniformLocation(this.program, 'u_MvpMatrix'),
-      u_NormalMatrix: this.gl.getUniformLocation(this.program, 'u_NormalMatrix')
+      u_ModelMatrix: this.gl.getUniformLocation(this.program, 'u_ModelMatrix'),
+      u_NormalMatrix: this.gl.getUniformLocation(this.program, 'u_NormalMatrix'),
+
+      // Uniforms (Phong Lighting) - NOVAS AQUI
+      u_LightPos: this.gl.getUniformLocation(this.program, 'u_LightPos'),
+      u_ViewPos: this.gl.getUniformLocation(this.program, 'u_ViewPos'),
+      u_LightColor: this.gl.getUniformLocation(this.program, 'u_LightColor')
     };
   }
 
@@ -99,26 +149,38 @@ class App {
     const deltaTime = (now - this.lastTime) / 1000; // segundos
     this.lastTime = now;
 
+    // A câmera agora cuida de si mesma
+    this.camera.update(deltaTime, this.keys);
+
     this.gl.clear(this.gl.COLOR_BUFFER_BIT | this.gl.DEPTH_BUFFER_BIT);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.useProgram(this.program);
 
-    this.angleX += 0.5 * deltaTime;
+    /*this.angleX += 0.5 * deltaTime;
     this.angleY += 1.2 * deltaTime;
-    this.angleZ += 0.3 * deltaTime;
+    this.angleZ += 0.3 * deltaTime;*/
 
-    const viewProjMatrix = Transform.multiplyMatrices(this.projMatrix, this.viewMatrix);
+    const viewProjMatrix = this.camera.viewProjMatrix;
+
+    // Envia a posição da câmera para o Phong (u_ViewPos)
+    this.gl.uniform3fv(this.locations.u_ViewPos, new Float32Array(this.camera.position));
+
+    // Envia a posição da luz (ex: vinda do alto e da direita)
+    this.gl.uniform3fv(this.locations.u_LightPos, new Float32Array([10.0, 10.0, 10.0]));
+
+    // Envia a cor da luz (Branca)
+    this.gl.uniform3fv(this.locations.u_LightColor, new Float32Array([1.0, 1.0, 1.0]));
 
     this.renderList.forEach(mesh => {
 
-      const rotX = Transform.rotateX(this.angleX);
+      /*const rotX = Transform.rotateX(this.angleX);
       const rotY = Transform.rotateY(this.angleY);
       const rotZ = Transform.rotateZ(this.angleZ);
 
       let modelMatrix = Transform.multiplyMatrices(rotY, rotX);
-      modelMatrix = Transform.multiplyMatrices(modelMatrix, rotZ);
+      modelMatrix = Transform.multiplyMatrices(modelMatrix, rotZ);*/
 
-      const mvpMatrix = Transform.multiplyMatrices(viewProjMatrix, modelMatrix);
+      let modelMatrix = Transform.identity();
 
       mesh.draw(this.gl, this.locations, viewProjMatrix, modelMatrix);
     });
