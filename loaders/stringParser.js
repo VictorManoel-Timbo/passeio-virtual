@@ -1,5 +1,3 @@
-// stringParser.js
-
 export class StringParser {
     constructor(str) {
         this.str = str;

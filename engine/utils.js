@@ -1,5 +1,3 @@
-// utils.js
-
 /**
  * Calcula a Normal de uma face a partir de 3 pontos
  * Essencial para o cálculo de iluminação manual no motor
