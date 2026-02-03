@@ -69,7 +69,7 @@ export class Geometry {
         return { vertices: v, normals: n, colors: c };
     }
 
-    /* Cria uma Esfera usando coordenadas polares
+    /** Cria uma Esfera usando coordenadas polares
      * @param {number} radius - Raio da esfera
      * @param {number} segments - Quantidade de subdivisões (detalhe)
      */
