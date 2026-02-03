@@ -4,6 +4,7 @@ import { Transform } from "./engine/transform.js";
 import { Camera } from "./engine/camera.js";
 import { loadTextFile } from "./engine/utils.js";
 import { Geometry } from "./geometry.js";
+import { Scenario } from "./scenario.js";
 
 class App {
   constructor() {
@@ -57,8 +58,31 @@ class App {
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.cullFace(this.gl.BACK);
 
+    // Criar primitivas na tela
+    // Criar um chão verde
+    //const planeData = Geometry.createPlane(20, 20, [0.2, 0.8, 0.2, 1.0]);
+    //const floor = new Mesh(this.gl, planeData);
+    //this.renderList.push(floor);
+
+    // Criar um pilar alto e fino (paralelepípedo)
+    //const boxData = Geometry.createBox(1, 5, 1, [0.8, 0.2, 0.2, 1.0]);
+    //const pillar = new Mesh(this.gl, boxData);
+    //this.renderList.push(pillar);
+
+    // Uma esfera suave (32 segmentos)
+    //const sphereData = Geometry.createSphere(2, 32, [0.3, 0.5, 0.9, 1.0]);
+    //const sphere = new Mesh(this.gl, sphereData);
+    //this.renderList.push(sphere);
+
+    // Um cilindro amarelo
+    //const cylinderData = Geometry.createCylinder(1.5, 4, 24, [1.0, 0.9, 0.0, 1.0]);
+    //const cylinder = new Mesh(this.gl, cylinderData);
+    //this.renderList.push(cylinder);
+
     //Coloquei para carregar algumas formas de teste
     await this.loadModel('./assets/caneca.obj');
+
+    this.scenario = new Scenario(this.gl);
 
     this.start()
   }
@@ -132,6 +156,18 @@ class App {
 
       mesh.draw(this.gl, this.locations, viewProjMatrix, modelMatrix);
     });
+
+    // Desenha o cenário completo com uma única chamada
+    if (this.scenario) {
+        this.scenario.draw(this.gl, this.locations, viewProjMatrix);
+    }
+
+    // Desenha outros modelos (como a caneca)
+    this.renderList.forEach(mesh => {
+        let modelMatrix = Transform.identity();
+        mesh.draw(this.gl, this.locations, viewProjMatrix, modelMatrix);
+    });
+
   }
 
   cleanup() {
