@@ -52,9 +52,11 @@ class App {
     this.locations = this.getLocations();
 
     this.camera = new Camera(this.gl);
-    // Posicionar câmera no início do corredor
-    this.camera.position = [0, 5, 35];
-    this.camera.yaw = 270; // Olhar para frente (Z+)
+    // Posiciona o usuário no meio do corredor, olhando para a sala
+    this.camera.position = [0, 5, 65]; 
+    this.camera.yaw = -90; // Direção Z Negativa (Sala)
+    this.camera.updateMatrices();
+
     this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
     this.gl.enable(this.gl.DEPTH_TEST);
