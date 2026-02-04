@@ -29,7 +29,7 @@ export class Scenario {
         const pillarColor = [0.2, 0.2, 0.2, 1.0]; 
         const frameColor = [0.4, 0.2, 0.1, 1.0];
         const floorColor = [0.25, 0.15, 0.05, 1.0]; 
-        const domeColor = [0.02, 0.05, 0.2, 1.0];
+        const ceilingColor = [0.02, 0.05, 0.2, 1.0]; // Azul escuro para o teto
 
         // --- 3. CONFIGURAÇÃO DAS LUZES ---
         this.ceilingLight = new Light("spot");
@@ -45,7 +45,10 @@ export class Scenario {
         // --- 4. GEOMETRIAS E MESHES ---
         const meshPillar = new Mesh(gl, Geometry.createBox(pillarSize, wallH, pillarSize, pillarColor));
         const meshFrame = new Mesh(gl, Geometry.createBox(frameW, frameH, 0.5, frameColor));
-        const meshDome = new Mesh(gl, Geometry.createDome(hS, 32, domeColor));
+        
+        // Teto plano para a sala e corredor
+        const meshRoomCeiling = new Mesh(gl, Geometry.createBox(roomSize, 0.5, roomSize, ceilingColor));
+        const meshCorrCeiling = new Mesh(gl, Geometry.createBox(corrWidth, 0.5, corrLen, ceilingColor));
 
         // --- 5. OBJETO CENTRAL (BLENDER) ---
         if (blenderModelData) {
@@ -100,7 +103,11 @@ export class Scenario {
         this.elements.push(
             { mesh: meshFrame, matrix: Transform.translate(Transform.identity(), frontWallCenter, frameY, hS - 0.7) },
             { mesh: meshFrame, matrix: Transform.translate(Transform.identity(), -frontWallCenter, frameY, hS - 0.7) },
-            { mesh: meshDome, matrix: Transform.translate(Transform.identity(), 0, wallH, 0) },
+            
+            // Teto da sala e corredor
+            { mesh: meshRoomCeiling, matrix: Transform.translate(Transform.identity(), 0, wallH, 0) },
+            { mesh: meshCorrCeiling, matrix: Transform.translate(Transform.identity(), 0, wallH, corridorZCenter) },
+
             { mesh: new Mesh(gl, Geometry.createBox(roomSize - pillarSize, wallH, wallT, wallColor)), matrix: Transform.translate(Transform.identity(), 0, hH, -hS) },
             { mesh: new Mesh(gl, Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor)), matrix: Transform.translate(Transform.identity(), hS, hH, 0) },
             { mesh: new Mesh(gl, Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor)), matrix: Transform.translate(Transform.identity(), -hS, hH, 0) },

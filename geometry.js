@@ -174,15 +174,11 @@ export class Geometry {
         };
     }
 
-    /**
-     * Cria um Domo (Meia Esfera) voltado para dentro
-     */
-    static createDome(radius, segments, color = [0.0, 0.0, 0.5, 1.0]) {
+    static createDome(radius, segments, color = [0.02, 0.05, 0.2, 1.0]) {
         const vertices = [];
         const normals = [];
         const colors = [];
 
-        // Percorre apenas até a metade da latitude (segments / 2)
         for (let lat = 0; lat <= segments / 2; lat++) {
             const theta = (lat * Math.PI) / segments;
             const sinTheta = Math.sin(theta);
@@ -190,16 +186,12 @@ export class Geometry {
 
             for (let lon = 0; lon <= segments; lon++) {
                 const phi = (lon * 2 * Math.PI) / segments;
-                const sinPhi = Math.sin(phi);
-                const cosPhi = Math.cos(phi);
-
-                const x = cosPhi * sinTheta;
+                const x = Math.cos(phi) * sinTheta;
                 const y = cosTheta;
-                const z = sinPhi * sinTheta;
+                const z = Math.sin(phi) * sinTheta;
 
                 vertices.push(radius * x, radius * y, radius * z);
-                
-                // Normais invertidas (-x, -y, -z) para iluminar o INTERIOR do domo
+                // Normais apontando para DENTRO para reagir à luz interna
                 normals.push(-x, -y, -z);
                 colors.push(...color);
             }
@@ -214,8 +206,7 @@ export class Geometry {
                 const first = lat * (segments + 1) + lon;
                 const second = first + segments + 1;
 
-                // Invertemos a ordem dos índices para garantir que o culling 
-                // mostre a face interna
+                // ORDEM INVERTIDA: Isso faz a "frente" da face ser o interior
                 const indices = [first, first + 1, second, second, first + 1, second + 1];
 
                 indices.forEach(idx => {
@@ -225,11 +216,6 @@ export class Geometry {
                 });
             }
         }
-
-        return {
-            vertices: new Float32Array(finalVertices),
-            normals: new Float32Array(finalNormals),
-            colors: new Float32Array(finalColors)
-        };
+        return { vertices: new Float32Array(finalVertices), normals: new Float32Array(finalNormals), colors: new Float32Array(finalColors) };
     }
 }
