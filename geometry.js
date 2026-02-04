@@ -173,4 +173,63 @@ export class Geometry {
             colors: colors
         };
     }
+
+    /**
+     * Cria um Domo (Meia Esfera) voltado para dentro
+     */
+    static createDome(radius, segments, color = [0.0, 0.0, 0.5, 1.0]) {
+        const vertices = [];
+        const normals = [];
+        const colors = [];
+
+        // Percorre apenas até a metade da latitude (segments / 2)
+        for (let lat = 0; lat <= segments / 2; lat++) {
+            const theta = (lat * Math.PI) / segments;
+            const sinTheta = Math.sin(theta);
+            const cosTheta = Math.cos(theta);
+
+            for (let lon = 0; lon <= segments; lon++) {
+                const phi = (lon * 2 * Math.PI) / segments;
+                const sinPhi = Math.sin(phi);
+                const cosPhi = Math.cos(phi);
+
+                const x = cosPhi * sinTheta;
+                const y = cosTheta;
+                const z = sinPhi * sinTheta;
+
+                vertices.push(radius * x, radius * y, radius * z);
+                
+                // Normais invertidas (-x, -y, -z) para iluminar o INTERIOR do domo
+                normals.push(-x, -y, -z);
+                colors.push(...color);
+            }
+        }
+
+        const finalVertices = [];
+        const finalNormals = [];
+        const finalColors = [];
+
+        for (let lat = 0; lat < segments / 2; lat++) {
+            for (let lon = 0; lon < segments; lon++) {
+                const first = lat * (segments + 1) + lon;
+                const second = first + segments + 1;
+
+                // Invertemos a ordem dos índices para garantir que o culling 
+                // mostre a face interna
+                const indices = [first, first + 1, second, second, first + 1, second + 1];
+
+                indices.forEach(idx => {
+                    finalVertices.push(vertices[idx * 3], vertices[idx * 3 + 1], vertices[idx * 3 + 2]);
+                    finalNormals.push(normals[idx * 3], normals[idx * 3 + 1], normals[idx * 3 + 2]);
+                    finalColors.push(colors[idx * 4], colors[idx * 4 + 1], colors[idx * 4 + 2], colors[idx * 4 + 3]);
+                });
+            }
+        }
+
+        return {
+            vertices: new Float32Array(finalVertices),
+            normals: new Float32Array(finalNormals),
+            colors: new Float32Array(finalColors)
+        };
+    }
 }
