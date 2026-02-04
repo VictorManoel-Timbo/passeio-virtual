@@ -1,10 +1,8 @@
 import { OBJDoc } from "./loaders/objParser.js";
-import { Mesh } from "./engine/mesh.js";
-import { Transform } from "./engine/transform.js";
 import { Camera } from "./engine/camera.js";
 import { loadTextFile } from "./engine/utils.js";
 import { Scenario } from "./scenario.js";
-import { Geometry } from "./geometry.js";
+import { Texture } from "./engine/texture.js";
 
 class App {
   constructor() {
@@ -18,9 +16,10 @@ class App {
     this.camera = new Camera(this.gl);
     this.keys = {};
     this.lastTime = 0;
-    this.locations = null; // Será preenchido no init
+    this.locations = null;
+    this.textures = {};
 
-    this.onEvent(); // Configura os ouvintes de teclado
+    this.onEvent();
     this.init();
   }
 
@@ -39,6 +38,28 @@ class App {
     const drawingInfo = objDoc.getDrawingInfo();
 
     return drawingInfo
+  }
+
+  async loadAllTextures(jsonUrl = "textures.json") {
+    this.textures = {};
+    try {
+      const response = await fetch("./textures.json");
+      const config = await response.json();
+
+      const promises = Object.keys(config).map(key => {
+        return new Promise((resolve) => {
+          const tex = new Texture(this.gl, config[key]);
+          this.textures[key] = tex;
+          tex.image.onload = () => {
+            tex.updateGPU();
+            resolve();
+          };
+        });
+      });
+      await Promise.all(promises);
+    } catch (e) {
+      console.error("Erro no carregamento de texturas:", e);
+    }
   }
 
   async init() {
@@ -60,7 +81,9 @@ class App {
 
     const model3d = await this.loadModel('./assets/Saori.obj');
 
-    this.scenario = new Scenario(this.gl, model3d);
+    await this.loadAllTextures('./texture.json');
+
+    this.scenario = new Scenario(this.gl, model3d, this.textures);
 
     this.start()
   }
@@ -99,6 +122,7 @@ class App {
       a_Position: this.gl.getAttribLocation(this.program, 'a_Position'),
       a_Normal: this.gl.getAttribLocation(this.program, 'a_Normal'),
       a_Color: this.gl.getAttribLocation(this.program, 'a_Color'),
+      a_TexCoord: this.gl.getAttribLocation(this.program, "a_TexCoord"),
 
       // Uniforms (Matrizes)
       u_MvpMatrix: this.gl.getUniformLocation(this.program, 'u_MvpMatrix'),
@@ -106,9 +130,10 @@ class App {
       u_NormalMatrix: this.gl.getUniformLocation(this.program, 'u_NormalMatrix'),
 
       // Uniforms (Phong Lighting)
-      u_LightPos: this.gl.getUniformLocation(this.program, 'u_LightPos'),
       u_ViewPos: this.gl.getUniformLocation(this.program, 'u_ViewPos'),
-      u_LightColor: this.gl.getUniformLocation(this.program, 'u_LightColor'),
+      u_Sampler: this.gl.getUniformLocation(this.program, "u_Sampler"),
+      // u_LightPos: this.gl.getUniformLocation(this.program, 'u_LightPos'),
+      // u_LightColor: this.gl.getUniformLocation(this.program, 'u_LightColor'),
 
       u_SpherePos: this.gl.getUniformLocation(this.program, 'u_SpherePos'),
       u_SphereColor: this.gl.getUniformLocation(this.program, 'u_SphereColor'),

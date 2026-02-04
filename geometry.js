@@ -10,19 +10,24 @@ export class Geometry {
         const d = depth / 2;
 
         const vertices = new Float32Array([
-            -w, 0, -d,  -w, 0, d,   w, 0, d,
-            -w, 0, -d,   w, 0, d,   w, 0, -d
+            -w, 0, -d, -w, 0, d, w, 0, d,
+            -w, 0, -d, w, 0, d, w, 0, -d
         ]);
 
         const normals = new Float32Array([
-            0, 1, 0,  0, 1, 0,  0, 1, 0,
-            0, 1, 0,  0, 1, 0,  0, 1, 0
+            0, 1, 0, 0, 1, 0, 0, 1, 0,
+            0, 1, 0, 0, 1, 0, 0, 1, 0
+        ]);
+
+        const texCoords = new Float32Array([
+            0, 0, 0, 1, 1, 1,
+            0, 0, 1, 1, 1, 0
         ]);
 
         const colors = new Float32Array(6 * 4);
         for (let i = 0; i < 6; i++) colors.set(color, i * 4);
 
-        return { vertices, normals, colors };
+        return { vertices, normals, colors, texCoords };
     }
 
     /**
@@ -40,33 +45,40 @@ export class Geometry {
         // Definindo os 36 vértices (6 faces * 2 triângulos * 3 vértices)
         const v = new Float32Array([
             // Frente (Z+)
-            -w, -h,  d,  w, -h,  d,  w,  h,  d,  -w, -h,  d,  w,  h,  d,  -w,  h,  d,
+            -w, -h, d, w, -h, d, w, h, d, -w, -h, d, w, h, d, -w, h, d,
             // Atrás (Z-)
-            -w, -h, -d, -w,  h, -d,  w,  h, -d,  -w, -h, -d,  w,  h, -d,  w, -h, -d,
+            -w, -h, -d, -w, h, -d, w, h, -d, -w, -h, -d, w, h, -d, w, -h, -d,
             // Cima (Y+)
-            -w,  h, -d, -w,  h,  d,  w,  h,  d,  -w,  h, -d,  w,  h,  d,  w,  h, -d,
+            -w, h, -d, -w, h, d, w, h, d, -w, h, -d, w, h, d, w, h, -d,
             // Baixo (Y-)
-            -w, -h, -d,  w, -h, -d,  w, -h,  d,  -w, -h, -d,  w, -h,  d,  -w, -h,  d,
+            -w, -h, -d, w, -h, -d, w, -h, d, -w, -h, -d, w, -h, d, -w, -h, d,
             // Direita (X+)
-             w, -h, -d,  w,  h, -d,  w,  h,  d,   w, -h, -d,  w,  h,  d,  w, -h,  d,
+            w, -h, -d, w, h, -d, w, h, d, w, -h, -d, w, h, d, w, -h, d,
             // Esquerda (X-)
-            -w, -h, -d, -w, -h,  d, -w,  h,  d,  -w, -h, -d, -w,  h,  d,  -w,  h, -d
+            -w, -h, -d, -w, -h, d, -w, h, d, -w, -h, -d, -w, h, d, -w, h, -d
         ]);
 
         // Normais (vetores perpendiculares a cada face)
         const n = new Float32Array([
-             0, 0, 1,  0, 0, 1,  0, 0, 1,   0, 0, 1,  0, 0, 1,  0, 0, 1, // Frente
-             0, 0,-1,  0, 0,-1,  0, 0,-1,   0, 0,-1,  0, 0,-1,  0, 0,-1, // Atrás
-             0, 1, 0,  0, 1, 0,  0, 1, 0,   0, 1, 0,  0, 1, 0,  0, 1, 0, // Cima
-             0,-1, 0,  0,-1, 0,  0,-1, 0,   0,-1, 0,  0,-1, 0,  0,-1, 0, // Baixo
-             1, 0, 0,  1, 0, 0,  1, 0, 0,   1, 0, 0,  1, 0, 0,  1, 0, 0, // Direita
-            -1, 0, 0, -1, 0, 0, -1, 0, 0,  -1, 0, 0, -1, 0, 0, -1, 0, 0  // Esquerda
+            0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, // Frente
+            0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, // Atrás
+            0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, // Cima
+            0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, // Baixo
+            1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, // Direita
+            -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0  // Esquerda
         ]);
+
+        // Mapeamento UV para as 6 faces do cubo
+        const texCoords = new Float32Array(36 * 2);
+        const faceUVs = [0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0];
+        for (let i = 0; i < 6; i++) {
+            texCoords.set(faceUVs, i * 12);
+        }
 
         const c = new Float32Array(36 * 4);
         for (let i = 0; i < 36; i++) c.set(color, i * 4);
 
-        return { vertices: v, normals: n, colors: c };
+        return { vertices: v, normals: n, colors: c, texCoords };
     }
 
     /** Cria uma Esfera usando coordenadas polares
@@ -77,6 +89,7 @@ export class Geometry {
         const vertices = [];
         const normals = [];
         const colors = [];
+        const uvs = [];
 
         for (let lat = 0; lat <= segments; lat++) {
             const theta = (lat * Math.PI) / segments;
@@ -95,9 +108,11 @@ export class Geometry {
                 // Vértices e Normais (em uma esfera centrada em 0, a normal é a própria posição normalizada)
                 vertices.push(radius * x, radius * y, radius * z);
                 normals.push(x, y, z);
-                
-                // Cor
+
                 colors.push(...color);
+
+                // UV: lon/segments (horizontal), lat/segments (vertical)
+                uvs.push(lon / segments, 1 - (lat / segments));
             }
         }
 
@@ -105,6 +120,7 @@ export class Geometry {
         const finalVertices = [];
         const finalNormals = [];
         const finalColors = [];
+        const finalTexCoords = [];
 
         for (let lat = 0; lat < segments; lat++) {
             for (let lon = 0; lon < segments; lon++) {
@@ -118,6 +134,7 @@ export class Geometry {
                     finalVertices.push(vertices[idx * 3], vertices[idx * 3 + 1], vertices[idx * 3 + 2]);
                     finalNormals.push(normals[idx * 3], normals[idx * 3 + 1], normals[idx * 3 + 2]);
                     finalColors.push(colors[idx * 4], colors[idx * 4 + 1], colors[idx * 4 + 2], colors[idx * 4 + 3]);
+                    finalTexCoords.push(uvs[idx * 2], uvs[idx * 2 + 1]);
                 });
             }
         }
@@ -125,7 +142,8 @@ export class Geometry {
         return {
             vertices: new Float32Array(finalVertices),
             normals: new Float32Array(finalNormals),
-            colors: new Float32Array(finalColors)
+            colors: new Float32Array(finalColors),
+            texCoords: new Float32Array(finalTexCoords)
         };
     }
 
@@ -139,29 +157,37 @@ export class Geometry {
         const v = [];
         const n = [];
         const h = height / 2;
+        const uv = [];
 
         for (let i = 0; i < segments; i++) {
-            const theta1 = (i * 2 * Math.PI) / segments;
-            const theta2 = ((i + 1) * 2 * Math.PI) / segments;
+            const u1 = i / segments;
+            const u2 = (i + 1) / segments;
+
+            const theta1 = u1 * 2 * Math.PI;
+            const theta2 = u2 * 2 * Math.PI;
 
             const x1 = Math.cos(theta1), z1 = Math.sin(theta1);
             const x2 = Math.cos(theta2), z2 = Math.sin(theta2);
 
             // --- Lado (Corpo do cilindro) ---
             // Triângulo 1
-            v.push(x1 * radius, h, z1 * radius,  x1 * radius, -h, z1 * radius,  x2 * radius, -h, z2 * radius);
-            n.push(x1, 0, z1,  x1, 0, z1,  x2, 0, z2);
+            v.push(x1 * radius, h, z1 * radius, x1 * radius, -h, z1 * radius, x2 * radius, -h, z2 * radius);
+            n.push(x1, 0, z1, x1, 0, z1, x2, 0, z2);
+            uv.push(u1, 0, u1, 1, u2, 1);
             // Triângulo 2
-            v.push(x1 * radius, h, z1 * radius,  x2 * radius, -h, z2 * radius,  x2 * radius, h, z2 * radius);
-            n.push(x1, 0, z1,  x2, 0, z2,  x2, 0, z2);
+            v.push(x1 * radius, h, z1 * radius, x2 * radius, -h, z2 * radius, x2 * radius, h, z2 * radius);
+            n.push(x1, 0, z1, x2, 0, z2, x2, 0, z2);
+            uv.push(u1, 0, u2, 1, u2, 0);
 
             // --- Topo (Tampa superior) ---
-            v.push(0, h, 0,  x2 * radius, h, z2 * radius,  x1 * radius, h, z1 * radius);
-            n.push(0, 1, 0,  0, 1, 0,  0, 1, 0);
+            v.push(0, h, 0, x2 * radius, h, z2 * radius, x1 * radius, h, z1 * radius);
+            n.push(0, 1, 0, 0, 1, 0, 0, 1, 0);
+            uv.push(0.5, 0.5, 0.5 + x2*0.5, 0.5 + z2*0.5, 0.5 + x1*0.5, 0.5 + z1*0.5);
 
             // --- Base (Tampa inferior) ---
-            v.push(0, -h, 0,  x1 * radius, -h, z1 * radius,  x2 * radius, -h, z2 * radius);
-            n.push(0, -1, 0,  0, -1, 0,  0, -1, 0);
+            v.push(0, -h, 0, x1 * radius, -h, z1 * radius, x2 * radius, -h, z2 * radius);
+            n.push(0, -1, 0, 0, -1, 0, 0, -1, 0);
+            uv.push(0.5, 0.5, 0.5 + x1*0.5, 0.5 + z1*0.5, 0.5 + x2*0.5, 0.5 + z2*0.5);
         }
 
         const colors = new Float32Array((v.length / 3) * 4);
@@ -170,7 +196,8 @@ export class Geometry {
         return {
             vertices: new Float32Array(v),
             normals: new Float32Array(n),
-            colors: colors
+            colors: colors,
+            texCoords: new Float32Array(uv)
         };
     }
 
@@ -178,6 +205,7 @@ export class Geometry {
         const vertices = [];
         const normals = [];
         const colors = [];
+        const uvs = [];
 
         for (let lat = 0; lat <= segments / 2; lat++) {
             const theta = (lat * Math.PI) / segments;
@@ -194,12 +222,14 @@ export class Geometry {
                 // Normais apontando para DENTRO para reagir à luz interna
                 normals.push(-x, -y, -z);
                 colors.push(...color);
+                uvs.push(lon / segments, 1 - (lat / (segments / 2)));
             }
         }
 
         const finalVertices = [];
         const finalNormals = [];
         const finalColors = [];
+        const finalTexCoords = [];
 
         for (let lat = 0; lat < segments / 2; lat++) {
             for (let lon = 0; lon < segments; lon++) {
@@ -213,9 +243,15 @@ export class Geometry {
                     finalVertices.push(vertices[idx * 3], vertices[idx * 3 + 1], vertices[idx * 3 + 2]);
                     finalNormals.push(normals[idx * 3], normals[idx * 3 + 1], normals[idx * 3 + 2]);
                     finalColors.push(colors[idx * 4], colors[idx * 4 + 1], colors[idx * 4 + 2], colors[idx * 4 + 3]);
+                    finalTexCoords.push(uvs[idx * 2], uvs[idx * 2 + 1]);
                 });
             }
         }
-        return { vertices: new Float32Array(finalVertices), normals: new Float32Array(finalNormals), colors: new Float32Array(finalColors) };
+        return { 
+            vertices: new Float32Array(finalVertices), 
+            normals: new Float32Array(finalNormals), 
+            colors: new Float32Array(finalColors),
+            texCoords: new Float32Array(finalTexCoords)
+        };
     }
 }

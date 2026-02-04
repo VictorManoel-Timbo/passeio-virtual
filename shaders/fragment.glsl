@@ -11,12 +11,16 @@ uniform vec3 u_SpherePos;
 uniform vec3 u_SphereColor;
 
 uniform vec3 u_ViewPos; // Posição da Câmera
+uniform sampler2D u_Sampler;
 
 varying vec3 v_Normal;
 varying vec3 v_Position;
 varying vec4 v_Color;
+varying vec2 v_TexCoord;
 
 void main() {
+  vec4 texColor = texture2D(u_Sampler, v_TexCoord);
+
   vec3 norm = normalize(v_Normal);
   vec3 viewDir = normalize(u_ViewPos - v_Position);
   vec3 result = vec3(0.5); // Luz ambiente global
@@ -56,5 +60,5 @@ void main() {
     result += (diffC * u_CeilingColor + specularC) * intensity;
   }
 
-  gl_FragColor = vec4(result, 1.0) * v_Color;
+  gl_FragColor = vec4(result, 1.0) * v_Color * texColor;
 }
