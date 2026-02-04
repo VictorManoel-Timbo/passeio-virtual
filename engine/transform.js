@@ -31,8 +31,10 @@ export class Transform {
       1
     ]);
   }
-  
-  // Cria uma matriz identidade (não transforma nada)
+
+  /**
+   * Cria uma matriz identidade
+   */
   static identity() {
     return new Float32Array([
       1, 0, 0, 0,
@@ -72,12 +74,12 @@ export class Transform {
 
   // Translada (move) uma matriz
   static translate(m, x, y, z) {
-    const out = new Float32Array(m);
-    out[12] = m[0] * x + m[4] * y + m[8] * z + m[12];
-    out[13] = m[1] * x + m[5] * y + m[9] * z + m[13];
-    out[14] = m[2] * x + m[6] * y + m[10] * z + m[14];
-    out[15] = m[3] * x + m[7] * y + m[11] * z + m[15];
-    return out;
+    return new Float32Array([
+      1, 0, 0, 0,
+      0, 1, 0, 0,
+      0, 0, 1, 0,
+      x, y, z, 1  // Translação fica aqui para Column-Major
+    ]);
   }
 
   static rotateX(a) {
@@ -153,6 +155,15 @@ export class Transform {
     for (let i = 0; i < 16; i++) out[i] = inv[i] * det;
 
     return out;
+  }
+
+  static scale(m, sx, sy, sz) {
+    return new Float32Array([
+      sx, 0, 0, 0,
+      0, sy, 0, 0,
+      0, 0, sz, 0,
+      0, 0, 0, 1
+    ]);
   }
 
   static getNormalMatrix(modelMatrix) {

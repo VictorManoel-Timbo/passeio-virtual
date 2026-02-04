@@ -16,7 +16,6 @@ class App {
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
     this.camera = new Camera(this.gl);
-    this.renderList = [];
     this.keys = {};
     this.lastTime = 0;
     this.locations = null; // Será preenchido no init
@@ -38,8 +37,8 @@ class App {
     }
 
     const drawingInfo = objDoc.getDrawingInfo();
-    const mesh = new Mesh(this.gl, drawingInfo);
-    this.renderList.push(mesh);
+
+    return drawingInfo
   }
 
   async init() {
@@ -52,10 +51,6 @@ class App {
     this.locations = this.getLocations();
 
     this.camera = new Camera(this.gl);
-    // Posiciona o usuário no meio do corredor, olhando para a sala
-    this.camera.position = [0, 5, 65]; 
-    this.camera.yaw = -90; // Direção Z Negativa (Sala)
-    this.camera.updateMatrices();
 
     this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
@@ -63,9 +58,9 @@ class App {
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.cullFace(this.gl.BACK);
 
-    await this.loadModel('./assets/Saori.obj');
+    const model3d = await this.loadModel('./assets/Saori.obj');
 
-    this.scenario = new Scenario(this.gl);
+    this.scenario = new Scenario(this.gl, model3d);
 
     this.start()
   }
@@ -148,15 +143,9 @@ class App {
       this.scenario.draw(this.gl, this.locations, viewProjMatrix);
     }
 
-    this.renderList.forEach(mesh => {
-      let modelMatrix = Transform.identity();
-      modelMatrix = Transform.translate(modelMatrix, 0, 1.5, 0);
-      mesh.draw(this.gl, this.locations, viewProjMatrix, modelMatrix);
-    });
-
   }
 
-  cleanup() {
+  cleanup() { //Esse tem que ser revisado
     console.log("Iniciando limpeza de recursos...");
 
     // 1. Para o loop de renderização
@@ -164,12 +153,6 @@ class App {
       cancelAnimationFrame(this.requestID);
     }
 
-    // 2. Limpa os buffers de cada Mesh na GPU
-    this.renderList.forEach(mesh => {
-      this.gl.deleteBuffer(mesh.vertexBuffer);
-      this.gl.deleteBuffer(mesh.normalBuffer);
-      this.gl.deleteBuffer(mesh.colorBuffer);
-    });
 
     // 3. Deleta o programa de Shader
     if (this.program) {
@@ -183,8 +166,6 @@ class App {
     this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
     this.gl.useProgram(null);
 
-    // 5. Reseta as listas locais
-    this.renderList = [];
     this.locations = null;
 
     console.log("GPU e Memória limpas.");
@@ -202,6 +183,3 @@ class App {
 }
 
 const engine = new App();
-window.addEventListener('beforeunload', () => {
-  app.cleanup();
-});

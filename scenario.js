@@ -34,12 +34,12 @@ export class Scenario {
         // --- 3. CONFIGURAÇÃO DAS LUZES ---
         this.ceilingLight = new Light("spot");
         this.ceilingLight.position = [0, wallH - 2, 0];
-        this.ceilingLight.color = [0.4, 0.5, 0.6]; 
+        this.ceilingLight.color = [0.4, 0.5, 0.8]; 
 
         this.movingLight = new Light("point");
-        this.movingLight.color = [1.0, 1.0, 0.8]; 
+        this.movingLight.color = [0.6, 1.0, 0.8]; 
 
-        const lightSphereData = Geometry.createSphere(1.5, 32, [1, 1, 0, 1]);
+        const lightSphereData = Geometry.createSphere(2, 32, [1, 1, 0, 1]);
         this.lightObject = new Mesh(gl, lightSphereData);
 
         // --- 4. GEOMETRIAS E MESHES ---
@@ -50,10 +50,8 @@ export class Scenario {
         // --- 5. OBJETO CENTRAL (BLENDER) ---
         if (blenderModelData) {
             this.centralObject = new Mesh(gl, blenderModelData);
-            // Matriz para centralizar no chão (Y=0) no meio da sala (X=0, Z=0)
             this.centralObjectMatrix = Transform.translate(Transform.identity(), 0, 0, 0);
-            // Se o objeto for muito pequeno/grande, adicione: 
-            // this.centralObjectMatrix = Transform.scale(this.centralObjectMatrix, s, s, s);
+            this.centralObjectMatrix = Transform.scale(this.centralObjectMatrix, 13, 13, 13);
         }
 
         // --- 6. MONTAGEM DA ESTRUTURA ---
