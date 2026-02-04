@@ -52,13 +52,16 @@ class App {
     this.locations = this.getLocations();
 
     this.camera = new Camera(this.gl);
+    // Posicionar câmera no início do corredor
+    this.camera.position = [0, 5, 35];
+    this.camera.yaw = 270; // Olhar para frente (Z+)
     this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
 
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.cullFace(this.gl.BACK);
 
-    await this.loadModel('./assets/caneca.obj');
+    await this.loadModel('./assets/Saori.obj');
 
     this.scenario = new Scenario(this.gl);
 
