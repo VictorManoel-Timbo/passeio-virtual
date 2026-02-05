@@ -12,8 +12,7 @@ export class StringParser {
     skipDelimiters() {
         for (var i = this.index, len = this.str.length; i < len; i++) {
             var c = this.str.charAt(i);
-            // Pula TAB, Espaço, Aspas e Parênteses
-            if (c == '\t' || c == ' ' || c == '(' || c == ')' || c == '"') continue;
+            if (c == '\t' || c == ' ' || c == '"') continue;
             break;
         }
         this.index = i;
@@ -24,7 +23,7 @@ export class StringParser {
         var start = this.index;
         for (var i = this.index, len = this.str.length; i < len; i++) {
             var c = this.str.charAt(i);
-            if (c == '\t' || c == ' ' || c == '(' || c == ')' || c == '"') break;
+            if (c == '\t' || c == ' ' || c == '"') break;
         }
         this.index = i;
         if (start == i) return null;

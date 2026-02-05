@@ -4,10 +4,16 @@ import { Transform } from "./engine/transform.js";
 import { Light } from "./engine/light.js";
 
 export class Scenario {
-    constructor(gl, blenderModelData, textureDict) { // blenderModelData vindo do carregador OBJ
+    /**
+     * @param {WebGLRenderingContext} gl 
+     * @param {Object} loadedModels - Objeto contendo { id: { mesh, textures } }
+     * @param {Object} globalTextures - Texturas avulsas (chão, sol, etc)
+     */
+    constructor(gl, loadedModels, globalTextures) {
         this.gl = gl;
         this.elements = [];
-        this.textures = textureDict;
+        this.textures = globalTextures; // Texturas como 'floor', 'sun', etc.
+        this.models = loadedModels;      // Aqui está a Saori e outros OBJs
 
         // --- 1. CONFIGURAÇÕES GERAIS ---
         const roomSize = 80;
@@ -30,7 +36,7 @@ export class Scenario {
         const pillarColor = [0.2, 0.2, 0.2, 1.0];
         const frameColor = [0.4, 0.2, 0.1, 1.0];
         const floorColor = [0.25, 0.15, 0.05, 1.0];
-        const ceilingColor = [0.02, 0.05, 0.2, 1.0]; // Azul escuro para o teto
+        const ceilingColor = [0.02, 0.05, 0.2, 1.0];
 
         // --- 3. CONFIGURAÇÃO DAS LUZES ---
         this.ceilingLight = new Light("spot");
@@ -40,25 +46,27 @@ export class Scenario {
         this.movingLight = new Light("point");
         this.movingLight.color = [0.6, 1.0, 0.8];
 
-        const lightSphereData = Geometry.createSphere(2, 32, [1, 1, 0, 1]);
-        this.lightObject = new Mesh(gl, lightSphereData);
+        this.sunData = this.models['sun'];
+        this.sunMatrix = Transform.identity();
 
-        // --- 4. GEOMETRIAS E MESHES ---
-        const meshPillar = new Mesh(gl, Geometry.createBox(pillarSize, wallH, pillarSize, pillarColor));
-        const meshFrame = new Mesh(gl, Geometry.createBox(frameW, frameH, 0.5, frameColor));
+        // --- 4. GEOMETRIAS BÁSICAS ---
+        // Criamos meshes estáticas usando o padrão de grupo único "default"
+        const meshPillar = new Mesh(gl, { "default": Geometry.createBox(pillarSize, wallH, pillarSize, pillarColor) });
+        const meshFrame = new Mesh(gl, { "default": Geometry.createBox(frameW, frameH, 0.5, frameColor) });
+        const meshRoomCeiling = new Mesh(gl, { "default": Geometry.createBox(roomSize, 0.5, roomSize, ceilingColor) });
+        const meshCorrCeiling = new Mesh(gl, { "default": Geometry.createBox(corrWidth, 0.5, corrLen, ceilingColor) });
 
-        // Teto plano para a sala e corredor
-        const meshRoomCeiling = new Mesh(gl, Geometry.createBox(roomSize, 0.5, roomSize, ceilingColor));
-        const meshCorrCeiling = new Mesh(gl, Geometry.createBox(corrWidth, 0.5, corrLen, ceilingColor));
-
-        // --- 5. OBJETO CENTRAL (BLENDER) ---
-        if (blenderModelData) {
-            this.centralObject = new Mesh(gl, blenderModelData);
-            this.centralObjectMatrix = Transform.translate(Transform.identity(), 0, 0, 0);
-            this.centralObjectMatrix = Transform.scale(this.centralObjectMatrix, 13, 13, 13);
+        // --- 5. CONFIGURAÇÃO DO MODELO CENTRAL (Saori ou similar) ---
+        // Usamos o ID definido no models.json
+        if (this.models['saori']) {
+            this.saoriData = this.models['saori'];
+            this.saoriMatrix = Transform.multiplyMatrices(
+                Transform.translate(Transform.identity(), 0, 0, 0),
+                Transform.scale(Transform.identity(), 12, 12, 12)
+            );
         }
 
-        // --- 6. MONTAGEM DA ESTRUTURA ---
+        // --- 6. MONTAGEM DA ESTRUTURA (Pilares e Quadros) ---
         const pillarPos = [
             [hS, -hS], [-hS, -hS], [hS, hS], [-hS, hS],
             [corrWidth / 2 + pillarSize / 2, hS], [-corrWidth / 2 - pillarSize / 2, hS]
@@ -101,43 +109,73 @@ export class Scenario {
         const frontWallCenter = (hS + (corrWidth / 2 + pillarSize)) / 2;
         const frontWallW = (roomSize - corrWidth) / 2 - pillarSize;
 
+        // --- 7. ADICIONANDO PAREDES E CHÃO ---
         this.elements.push(
             { mesh: meshFrame, matrix: Transform.translate(Transform.identity(), frontWallCenter, frameY, hS - 0.7) },
             { mesh: meshFrame, matrix: Transform.translate(Transform.identity(), -frontWallCenter, frameY, hS - 0.7) },
-
-            // Teto da sala e corredor
             { mesh: meshRoomCeiling, matrix: Transform.translate(Transform.identity(), 0, wallH, 0) },
             { mesh: meshCorrCeiling, matrix: Transform.translate(Transform.identity(), 0, wallH, corridorZCenter) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(roomSize - pillarSize, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), 0, hH, -hS) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor) }), matrix: Transform.translate(Transform.identity(), hS, hH, 0) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor) }), matrix: Transform.translate(Transform.identity(), -hS, hH, 0) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), frontWallCenter, hH, hS) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), -frontWallCenter, hH, hS) },
 
-            { mesh: new Mesh(gl, Geometry.createBox(roomSize - pillarSize, wallH, wallT, wallColor)), matrix: Transform.translate(Transform.identity(), 0, hH, -hS) },
-            { mesh: new Mesh(gl, Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor)), matrix: Transform.translate(Transform.identity(), hS, hH, 0) },
-            { mesh: new Mesh(gl, Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor)), matrix: Transform.translate(Transform.identity(), -hS, hH, 0) },
-            { mesh: new Mesh(gl, Geometry.createBox(frontWallW, wallH, wallT, wallColor)), matrix: Transform.translate(Transform.identity(), frontWallCenter, hH, hS) },
-            { mesh: new Mesh(gl, Geometry.createBox(frontWallW, wallH, wallT, wallColor)), matrix: Transform.translate(Transform.identity(), -frontWallCenter, hH, hS) },
-            { mesh: new Mesh(gl, Geometry.createPlane(roomSize, roomSize, floorColor)), matrix: Transform.identity(), texture: this.textures['floor'] },
-            { mesh: new Mesh(gl, Geometry.createPlane(corrWidth, corrLen, floorColor)), matrix: Transform.translate(Transform.identity(), 0, 0, corridorZCenter), texture: this.textures['floor'] },
-            { mesh: new Mesh(gl, Geometry.createBox(wallT, wallH, corrLen, wallColor)), matrix: Transform.translate(Transform.identity(), corrWidth / 2, hH, corridorZCenter) },
-            { mesh: new Mesh(gl, Geometry.createBox(wallT, wallH, corrLen, wallColor)), matrix: Transform.translate(Transform.identity(), -corrWidth / 2, hH, corridorZCenter) },
-            { mesh: new Mesh(gl, Geometry.createBox(corrWidth, wallH, wallT, wallColor)), matrix: Transform.translate(Transform.identity(), 0, hH, hS + corrLen) }
+            // Chão com textura
+            {
+                mesh: new Mesh(gl, { "default": Geometry.createPlane(roomSize, roomSize, floorColor) }),
+                matrix: Transform.identity(),
+                texture: this.textures['floor']
+            },
+            {
+                mesh: new Mesh(gl, { "default": Geometry.createPlane(corrWidth, corrLen, floorColor) }),
+                matrix: Transform.translate(Transform.identity(), 0, 0, corridorZCenter),
+                texture: this.textures['floor']
+            },
+
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, wallColor) }), matrix: Transform.translate(Transform.identity(), corrWidth / 2, hH, corridorZCenter) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, wallColor) }), matrix: Transform.translate(Transform.identity(), -corrWidth / 2, hH, corridorZCenter) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(corrWidth, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), 0, hH, hS + corrLen) }
         );
     }
 
     update(deltaTime) {
         this.movingLight.updateOrbit(deltaTime, 35.0, 0.4, 22.0);
+        if (this.sunData) {
+            const lx = this.movingLight.position[0];
+            const ly = this.movingLight.position[1];
+            const lz = this.movingLight.position[2];
+
+            this.sunMatrix = Transform.translate(Transform.identity(), lx, ly, lz);
+            this.sunMatrix = Transform.multiplyMatrices(this.sunMatrix, Transform.scale(Transform.identity(), 3, 3, 3));
+        }
     }
 
     draw(gl, locations, viewProjMatrix) {
         this.ceilingLight.bind(gl, locations, "u_Ceiling");
         this.movingLight.bind(gl, locations, "u_Sphere");
 
-        this.elements.forEach(el => el.mesh.draw(gl, locations, viewProjMatrix, el.matrix, el.texture));
+        // Desenha elementos estáticos do cenário
+        this.elements.forEach(el => {
+            // Se o elemento tem uma textura única (como o chão), passamos ela num objeto
+            const texParam = el.texture ? { "default": el.texture } : null;
+            el.mesh.draw(gl, locations, viewProjMatrix, el.matrix, texParam);
+        });
 
-        // Desenhar Objeto Central do Blender
-        if (this.centralObject) {
-            this.centralObject.draw(gl, locations, viewProjMatrix, this.centralObjectMatrix);
+        if (this.saoriData) {
+            this.saoriData.mesh.draw(gl, locations, viewProjMatrix, this.saoriMatrix, this.saoriData.textures);
         }
 
-        const lightMatrix = Transform.translate(Transform.identity(), ...this.movingLight.position);
-        this.lightObject.draw(gl, locations, viewProjMatrix, lightMatrix, this.textures['sun']);
+        // Desenha a esfera da luz
+        if (this.sunData) {
+            // O sol geralmente não deve ser afetado por sombras, mas no shader atual ele será tratado como um objeto comum
+            this.sunData.mesh.draw(
+                gl,
+                locations,
+                viewProjMatrix,
+                this.sunMatrix,     // A matriz que atualizamos no update()
+                this.sunData.textures // As texturas carregadas (Sun.mtl)
+            );
+        }
     }
 }

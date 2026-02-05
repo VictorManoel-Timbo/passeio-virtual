@@ -1,0 +1,15 @@
+{
+    "models": [
+        {
+            "id": "saori",
+            "path": "assets/saori/Saori.obj",
+            "scale": 1.0
+        },
+        {
+            "id": "sun",
+            "path": "assets/sun/Sun.obj",
+            "scale": 1.0
+
+        }
+    ]
+}

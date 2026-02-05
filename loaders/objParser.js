@@ -2,7 +2,7 @@ import { StringParser } from "./stringParser.js";
 import { calcNormal } from "../engine/utils.js";
 
 /**
- * Classes de Suporte para a Estrutura do Modelo
+ * Estruturas de suporte para o modelo
  */
 class OBJObject {
     constructor(name) {
@@ -21,6 +21,7 @@ class Face {
         this.materialName = materialName || "";
         this.vIndices = [];
         this.nIndices = [];
+        this.tIndices = []; // Índices de textura (vt)
         this.numIndices = 0;
         this.normal = null;
     }
@@ -37,11 +38,12 @@ class Material {
     constructor(name, r, g, b, a) {
         this.name = name;
         this.color = { r, g, b, a };
+        this.map_Kd = null; // Caminho da imagem da textura
     }
 }
 
 /**
- * Classe Principal OBJDoc para processamento do ficheiro .obj
+ * Classe Principal para processamento do ficheiro .obj e .mtl
  */
 export class OBJDoc {
     constructor(fileName) {
@@ -50,6 +52,7 @@ export class OBJDoc {
         this.objects = [];
         this.vertices = [];
         this.normals = [];
+        this.texCoords = [];
     }
 
     async parse(fileString, scale, reverse) {
@@ -92,6 +95,12 @@ export class OBJDoc {
                         z: sp.getFloat()
                     });
                     continue;
+                case 'vt':
+                    this.texCoords.push({
+                        u: sp.getFloat(),
+                        v: sp.getFloat()
+                    });
+                    continue;
                 case 'usemtl':
                     currentMaterialName = sp.getWord();
                     continue;
@@ -129,8 +138,9 @@ export class OBJDoc {
     onReadMTLFile(fileString, mtl) {
         var lines = fileString.split('\n');
         lines.push(null);
-        var index = 0, line, name = "";
+        var index = 0, line;
         var sp = new StringParser();
+        var currentMaterial = null;
 
         while ((line = lines[index++]) != null) {
             sp.init(line);
@@ -139,12 +149,19 @@ export class OBJDoc {
 
             switch (command) {
                 case 'newmtl':
-                    name = sp.getWord();
+                    var name = sp.getWord();
+                    currentMaterial = new Material(name, 0.8, 0.8, 0.8, 1);
+                    mtl.materials.push(currentMaterial);
                     continue;
                 case 'Kd':
-                    if (name == "") continue;
-                    mtl.materials.push(new Material(name, sp.getFloat(), sp.getFloat(), sp.getFloat(), 1));
-                    name = "";
+                    if (currentMaterial) {
+                        currentMaterial.color = { r: sp.getFloat(), g: sp.getFloat(), b: sp.getFloat(), a: 1 };
+                    }
+                    continue;
+                case 'map_Kd':
+                    if (currentMaterial) {
+                        currentMaterial.map_Kd = sp.getWord();
+                    }
                     continue;
             }
         }
@@ -158,31 +175,29 @@ export class OBJDoc {
             if (word == null) break;
             var subWords = word.split('/');
             if (subWords.length >= 1) face.vIndices.push(parseInt(subWords[0]) - 1);
+            if (subWords.length >= 2 && subWords[1] !== "") face.tIndices.push(parseInt(subWords[1]) - 1);
             if (subWords.length >= 3) face.nIndices.push(parseInt(subWords[2]) - 1);
             else face.nIndices.push(-1);
         }
 
-        // Cálculo da normal da face para iluminação
         var v0 = vertices[face.vIndices[0]];
         var v1 = vertices[face.vIndices[1]];
         var v2 = vertices[face.vIndices[2]];
         var normal = calcNormal([v0.x, v0.y, v0.z], [v1.x, v1.y, v1.z], [v2.x, v2.y, v2.z]);
-
-        if (reverse) {
-            normal = normal.map(n => -n);
-        }
+        if (reverse) normal = normal.map(n => -n);
         face.normal = { x: normal[0], y: normal[1], z: normal[2] };
 
-        // Triangulação manual para polígonos com mais de 3 vértices
         if (face.vIndices.length > 3) {
             var n = face.vIndices.length - 2;
-            var newVIndices = [], newNIndices = [];
+            var newVIndices = [], newNIndices = [], newTIndices = [];
             for (var i = 0; i < n; i++) {
                 newVIndices.push(face.vIndices[0], face.vIndices[i + 1], face.vIndices[i + 2]);
                 newNIndices.push(face.nIndices[0], face.nIndices[i + 1], face.nIndices[i + 2]);
+                if (face.tIndices.length > 0) newTIndices.push(face.tIndices[0], face.tIndices[i + 1], face.tIndices[i + 2]);
             }
             face.vIndices = newVIndices;
             face.nIndices = newNIndices;
+            face.tIndices = newTIndices;
         }
         face.numIndices = face.vIndices.length;
         return face;
@@ -192,50 +207,75 @@ export class OBJDoc {
         return this.mtls.length == 0 || this.mtls.every(m => m.complete);
     }
 
-    findColor(name) {
+    findMaterial(name) {
         for (let mtl of this.mtls) {
             for (let mat of mtl.materials) {
-                if (mat.name == name) return mat.color;
+                if (mat.name == name) return mat;
             }
         }
-        return { r: 0.8, g: 0.8, b: 0.8, a: 1 };
+        return null;
     }
 
     /**
-     * Organiza os dados para os Buffers do WebGL
+     * Retorna um mapa de materiais para que o main.js saiba quais texturas carregar.
      */
-    getDrawingInfo() {
-        var numIndices = this.objects.reduce((acc, obj) => acc + obj.numIndices, 0);
-        var vertices = new Float32Array(numIndices * 3);
-        var normals = new Float32Array(numIndices * 3);
-        var colors = new Float32Array(numIndices * 4);
-        var indices = new Uint16Array(numIndices);
+    getMaterialsInfo() {
+        const info = {};
+        this.mtls.forEach(mtl => {
+            mtl.materials.forEach(mat => {
+                info[mat.name] = mat.map_Kd;
+            });
+        });
+        return info;
+    }
 
-        var index_indices = 0;
+    /**
+     * Agrupa a geometria por material (essencial para Saori e modelos complexos)
+     */
+    getDrawingInfoGrouped() {
+        const groups = {};
+
         for (let object of this.objects) {
             for (let face of object.faces) {
-                var color = this.findColor(face.materialName);
-                for (var k = 0; k < face.vIndices.length; k++) {
-                    indices[index_indices] = index_indices;
-                    var v = this.vertices[face.vIndices[k]];
-                    vertices[index_indices * 3 + 0] = v.x;
-                    vertices[index_indices * 3 + 1] = v.y;
-                    vertices[index_indices * 3 + 2] = v.z;
+                const mtlName = face.materialName;
+                if (!groups[mtlName]) {
+                    groups[mtlName] = { vertices: [], normals: [], texCoords: [], colors: [] };
+                }
 
-                    colors[index_indices * 4 + 0] = color.r;
-                    colors[index_indices * 4 + 1] = color.g;
-                    colors[index_indices * 4 + 2] = color.b;
-                    colors[index_indices * 4 + 3] = color.a;
+                const mat = this.findMaterial(mtlName);
+                const color = mat ? mat.color : { r: 0.8, g: 0.8, b: 0.8, a: 1 };
 
-                    var nIdx = face.nIndices[k];
-                    var n = nIdx >= 0 ? this.normals[nIdx] : face.normal;
-                    normals[index_indices * 3 + 0] = n.x;
-                    normals[index_indices * 3 + 1] = n.y;
-                    normals[index_indices * 3 + 2] = n.z;
-                    index_indices++;
+                for (var i = 0; i < face.vIndices.length; i++) {
+                    // Vértices
+                    const v = this.vertices[face.vIndices[i]];
+                    groups[mtlName].vertices.push(v.x, v.y, v.z);
+
+                    // Normais
+                    const nIdx = face.nIndices[i];
+                    const n = nIdx >= 0 ? this.normals[nIdx] : face.normal;
+                    groups[mtlName].normals.push(n.x, n.y, n.z);
+
+                    // UVs
+                    if (face.tIndices.length > i) {
+                        const t = this.texCoords[face.tIndices[i]];
+                        groups[mtlName].texCoords.push(t.u, 1.0 - t.v); // Flip V para WebGL
+                    } else {
+                        groups[mtlName].texCoords.push(0, 0);
+                    }
+
+                    // Cores (do MTL)
+                    groups[mtlName].colors.push(color.r, color.g, color.b, color.a);
                 }
             }
         }
-        return { vertices, normals, colors, indices };
+
+        // Converte para TypedArrays
+        for (let mtl in groups) {
+            groups[mtl].vertices = new Float32Array(groups[mtl].vertices);
+            groups[mtl].normals = new Float32Array(groups[mtl].normals);
+            groups[mtl].colors = new Float32Array(groups[mtl].colors);
+            groups[mtl].texCoords = new Float32Array(groups[mtl].texCoords);
+        }
+        return groups;
     }
 }

@@ -1,16 +1,19 @@
 import { Transform } from "./transform.js";
 
 export class Mesh {
-    constructor(gl, drawingInfo) {
+    constructor(gl, groupedDrawingInfo) {
         this.gl = gl;
-        this.vertexCount = drawingInfo.vertices.length / 3;
+        this.subMeshes = {}; // Dicionário de grupos de buffers
 
-        // Criação dos Buffers
-        this.vertexBuffer = this._createBuffer(gl.ARRAY_BUFFER, drawingInfo.vertices);
-        this.normalBuffer = this._createBuffer(gl.ARRAY_BUFFER, drawingInfo.normals);
-        this.colorBuffer = this._createBuffer(gl.ARRAY_BUFFER, drawingInfo.colors);
-        if (drawingInfo.texCoords) {
-            this.texCoordBuffer = this._createBuffer(gl.ARRAY_BUFFER, drawingInfo.texCoords);
+        // groupedDrawingInfo é o objeto retornado pelo objDoc.getDrawingInfoGrouped()
+        for (const [materialName, data] of Object.entries(groupedDrawingInfo)) {
+            this.subMeshes[materialName] = {
+                vertexCount: data.vertices.length / 3,
+                vertexBuffer: this._createBuffer(gl.ARRAY_BUFFER, data.vertices),
+                normalBuffer: this._createBuffer(gl.ARRAY_BUFFER, data.normals),
+                colorBuffer: this._createBuffer(gl.ARRAY_BUFFER, data.colors),
+                texCoordBuffer: data.texCoords ? this._createBuffer(gl.ARRAY_BUFFER, data.texCoords) : null
+            };
         }
     }
 
@@ -21,35 +24,44 @@ export class Mesh {
         return buf;
     }
 
-    draw(gl, locations, viewProjMatrix, modelMatrix, texture = null) {
-        // Envia a MVP normal para o gl_Position
+    draw(gl, locations, viewProjMatrix, modelMatrix, textureDict = null) {
+        // 1. Configurações Globais do Objeto (Matrizes)
         const mvpMatrix = Transform.multiplyMatrices(viewProjMatrix, modelMatrix);
         gl.uniformMatrix4fv(locations.u_MvpMatrix, false, mvpMatrix);
-
-        // ENVIE A MODEL MATRIX (Esta faltava para o cálculo de luz fixar no mundo)
         gl.uniformMatrix4fv(locations.u_ModelMatrix, false, modelMatrix);
 
         const normalMatrix = Transform.getNormalMatrix(modelMatrix);
         gl.uniformMatrix4fv(locations.u_NormalMatrix, false, normalMatrix);
 
-        if (texture && texture.isLoaded) {
-            texture.bind(0); // Ativa TEXTURE0 e faz o bind
-            gl.uniform1i(locations.u_Sampler, 0); // Avisa o shader para usar a unidade 0
+        // 2. Desenha cada Sub-Mesh (cada parte que usa um material/textura diferente)
+        for (const [materialName, meshData] of Object.entries(this.subMeshes)) {
+
+            // Tenta encontrar a textura correspondente a esta parte no dicionário
+            if (textureDict && textureDict[materialName]) {
+                const texture = textureDict[materialName];
+                if (texture.isLoaded) {
+                    texture.bind(0);
+                    gl.uniform1i(locations.u_Sampler, 0);
+                    // Aqui você poderia enviar um uniform "u_UseTexture = true" se seu shader suportar
+                }
+            }
+
+            // Bind dos atributos desta sub-mesh específica
+            this._bindAttribute(locations.a_Position, meshData.vertexBuffer, 3);
+            this._bindAttribute(locations.a_Normal, meshData.normalBuffer, 3);
+            this._bindAttribute(locations.a_Color, meshData.colorBuffer, 4);
+
+            if (meshData.texCoordBuffer && locations.a_TexCoord !== -1) {
+                this._bindAttribute(locations.a_TexCoord, meshData.texCoordBuffer, 2);
+            }
+
+            // Comando de desenho para esta parte
+            gl.drawArrays(gl.TRIANGLES, 0, meshData.vertexCount);
         }
-
-        this._bindAttribute(locations.a_Position, this.vertexBuffer, 3);
-        this._bindAttribute(locations.a_Normal, this.normalBuffer, 3);
-        this._bindAttribute(locations.a_Color, this.colorBuffer, 4);
-
-        if (this.texCoordBuffer && locations.a_TexCoord !== -1) {
-            this._bindAttribute(locations.a_TexCoord, this.texCoordBuffer, 2);
-        }
-
-        gl.drawArrays(gl.TRIANGLES, 0, this.vertexCount);
     }
 
     _bindAttribute(location, buffer, size) {
-        if (location === -1 || location === undefined) return;
+        if (location === -1 || location === undefined || location === null) return;
         this.gl.bindBuffer(this.gl.ARRAY_BUFFER, buffer);
         this.gl.vertexAttribPointer(location, size, this.gl.FLOAT, false, 0, 0);
         this.gl.enableVertexAttribArray(location);
