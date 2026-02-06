@@ -106,7 +106,10 @@ class App {
 
     const objDoc = new OBJDoc(modelCfg.path);
     const objText = await (await fetch(modelCfg.path)).text();
-    await objDoc.parse(objText, modelCfg.scale, false);
+    
+    // Importante: Use escala 1.0 aqui para pegar o tamanho original (raw)
+    // A escala do jogo será aplicada depois no Scenario.js
+    await objDoc.parse(objText, 1.0, false);
 
     while (!objDoc.isMTLComplete()) {
       await new Promise(r => setTimeout(r, 50));
@@ -114,14 +117,65 @@ class App {
 
     const folderPath = modelCfg.path.substring(0, modelCfg.path.lastIndexOf("/") + 1);
     const materialsMap = objDoc.getMaterialsInfo();
-
-    // Resolve as texturas do material
     const modelTextureDict = await this.resolveModelTextures(materialsMap, folderPath);
 
+    // Pega a geometria
+    const drawingInfo = objDoc.getDrawingInfoGrouped();
+
+    // --- NOVO CÓDIGO AQUI ---
+    // Calcula a caixa de colisão usando o método que acabamos de criar
+    const bounds = this.calculateBoundingBox(drawingInfo);
+    // ------------------------
+
     return {
-      mesh: new Mesh(this.gl, objDoc.getDrawingInfoGrouped()),
-      textures: modelTextureDict
+      mesh: new Mesh(this.gl, drawingInfo),
+      textures: modelTextureDict,
+      bounds: bounds // <--- Adiciona a caixa ao objeto retornado
     };
+  }
+
+  calculateBoundingBox(drawingInfo) {
+    let minX = Infinity, minY = Infinity, minZ = Infinity;
+    let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
+
+    // --- CORREÇÃO AQUI ---
+    // Verifica se é um Array. Se não for (é um objeto único), coloca dentro de um array [].
+    // Se for nulo ou indefinido, usa um array vazio [].
+    let groups = [];
+    
+    if (Array.isArray(drawingInfo)) {
+      groups = drawingInfo;
+    } else if (drawingInfo && typeof drawingInfo === 'object') {
+      groups = [drawingInfo];
+    }
+
+    // Agora iteramos sobre 'groups' que garantimos ser uma lista
+    for (const group of groups) {
+      // Proteção caso o grupo não tenha vértices
+      if (!group.vertices) continue;
+
+      const vertices = group.vertices; 
+      
+      for (let i = 0; i < vertices.length; i += 3) {
+        const x = vertices[i];
+        const y = vertices[i+1];
+        const z = vertices[i+2];
+
+        if (x < minX) minX = x;
+        if (x > maxX) maxX = x;
+        if (y < minY) minY = y;
+        if (y > maxY) maxY = y;
+        if (z < minZ) minZ = z;
+        if (z > maxZ) maxZ = z;
+      }
+    }
+
+    // Se nenhum vértice foi encontrado (minX continua Infinity), retorna caixa zerada
+    if (minX === Infinity) {
+        return { min: [0, 0, 0], max: [0, 0, 0] };
+    }
+
+    return { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] };
   }
 
   async resolveModelTextures(materialsMap, folderPath) {
@@ -220,11 +274,32 @@ class App {
   }
 
   onLoop(deltaTime) {
-    // Atualizar câmera (Movimento WASD definido no camera.js)
+    // 1. Salva a posição ANTES de se mover
+    const oldX = this.camera.position[0];
+    const oldZ = this.camera.position[2];
+
+    // 2. A Câmera processa o input do usuário 
+    // Isso garante que a intenção do usuário seja calculada
     this.camera.update(deltaTime, this.keys);
 
-    if (this.scenario) {
-      this.scenario.update(deltaTime);
+    // Se o cenário ainda não carregou, não faz colisão
+    if (!this.scenario) return;
+
+    // 3. Atualiza objetos do cenário (luzes orbitando, etc)
+    this.scenario.update(deltaTime);
+
+    // --- LÓGICA DE COLISÃO COM DESLIZAMENTO ---
+
+    // A. Verifica colisão no eixo X
+    if (this.scenario.checkCollision(this.camera.position[0], oldZ)) {
+        // Se bater movendo em X, cancela SÓ o movimento X
+        this.camera.position[0] = oldX; 
+    }
+
+    // B. Verifica colisão no eixo Z
+    if (this.scenario.checkCollision(this.camera.position[0], this.camera.position[2])) {
+        // Se bater movendo em Z, cancela SÓ o movimento Z
+        this.camera.position[2] = oldZ;
     }
   }
 

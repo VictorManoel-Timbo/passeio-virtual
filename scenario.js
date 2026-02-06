@@ -12,6 +12,7 @@ export class Scenario {
         // Inicialização de Arrays e Dicionários
         this.elements = [];
         this.entities = {};
+        this.colliders = [];
 
         // 1. Configurações e Materiais
         this._initSettings();
@@ -21,6 +22,7 @@ export class Scenario {
         this._setupLights();
         this._initEntities();
         this._buildArchitecture(gl);
+        this._setupColliders();
     }
 
     // --- MÉTODOS DE ORGANIZAÇÃO (PRIVADOS POR CONVENÇÃO) ---
@@ -65,19 +67,98 @@ export class Scenario {
 
     _initEntities() {
         const modelConfigs = {
-            'sun': { pos: [0, 0, 0], scale: [4, 4, 4] },
-            'door': { pos: [0, 0, 179], scale: [5.25, 6, 5.25] },
-            'saori': { pos: [0, 0, 0], scale: [25, 25, 25] }
+            // Adicionei a flag 'collidable' para decidir o que tem física
+            'sun':   { pos: [0, 0, 0], scale: [4, 4, 4], collidable: false },
+            'door':  { pos: [0, 0, 179], scale: [5.25, 6, 5.25], collidable: true },
+            'saori': { pos: [0, 0, 0], scale: [25, 25, 25], collidable: true }
         };
 
         Object.keys(modelConfigs).forEach(id => {
             if (this.models[id]) {
                 const conf = modelConfigs[id];
+                const modelData = this.models[id];
+
+                // 1. Gráficos (Visual)
                 let matrix = Transform.translate(Transform.identity(), ...conf.pos);
                 matrix = Transform.multiplyMatrices(matrix, Transform.scale(Transform.identity(), ...conf.scale));
-                this.entities[id] = { data: this.models[id], matrix: matrix };
+                this.entities[id] = { data: modelData, matrix: matrix };
+
+                // 2. Física (Colisão) - NOVO
+                if (conf.collidable && modelData.bounds) {
+                    const { min, max } = modelData.bounds; // Limites locais
+                    const [sx, sy, sz] = conf.scale;       // Escala do objeto
+                    const [px, py, pz] = conf.pos;         // Posição no mundo
+
+                    // Calcula onde a caixa está no mundo real:
+                    // (Mínimo Local * Escala) + Posição
+                    const worldMinX = (min[0] * sx) + px;
+                    const worldMaxX = (max[0] * sx) + px;
+                    const worldMinZ = (min[2] * sz) + pz;
+                    const worldMaxZ = (max[2] * sz) + pz;
+
+                    // Adiciona à lista de colisores existente
+                    // Usamos Math.min/max para garantir a ordem correta caso a escala seja negativa
+                    this.colliders.push({
+                        minX: Math.min(worldMinX, worldMaxX),
+                        maxX: Math.max(worldMinX, worldMaxX),
+                        minZ: Math.min(worldMinZ, worldMaxZ),
+                        maxZ: Math.max(worldMinZ, worldMaxZ)
+                    });
+                }
             }
         });
+    }
+
+    // Configura onde as paredes estão (Fisicamente)
+    _setupColliders() {
+        const { roomSize, wallT, pillarSize, corrWidth, corrLen } = this.cfg;
+        const hS = this.hS; // Metade da sala
+
+        // Função auxiliar para criar caixas (Bounding Box)
+        // x, z = centro; w, d = largura e profundidade total
+        const addWall = (x, z, w, d) => {
+            this.colliders.push({
+                minX: x - w / 2, maxX: x + w / 2,
+                minZ: z - d / 2, maxZ: z + d / 2
+            });
+        };
+
+        // --- PAREDES DA SALA ---
+        addWall(0, -hS, roomSize, wallT); // Fundo
+        addWall(-hS, 0, wallT, roomSize); // Esquerda
+        addWall(hS, 0, wallT, roomSize);  // Direita
+
+        // --- PAREDES DA FRENTE (Calculadas para deixar o buraco do corredor) ---
+        const frontWallW = (roomSize - corrWidth) / 2 - pillarSize;
+        const frontCenter = (hS + (corrWidth/2 + pillarSize)) / 2;
+        
+        addWall(frontCenter, hS, frontWallW, wallT);  // Frente Dir
+        addWall(-frontCenter, hS, frontWallW, wallT); // Frente Esq
+
+        // --- PILARES (Tratados como quadrados sólidos) ---
+        const pPos = [
+            [hS, -hS], [-hS, -hS], [hS, hS], [-hS, hS], // Cantos
+            [corrWidth/2 + pillarSize/2, hS], [-corrWidth/2 - pillarSize/2, hS] // Entrada Corredor
+        ];
+        pPos.forEach(p => addWall(p[0], p[1], pillarSize, pillarSize));
+
+        // --- CORREDOR ---
+        const corrZ = hS + corrLen / 2;
+        addWall(corrWidth/2, corrZ, wallT, corrLen);  // Parede Dir Corredor
+        addWall(-corrWidth/2, corrZ, wallT, corrLen); // Parede Esq Corredor
+        addWall(0, hS + corrLen, corrWidth, wallT);   // Fundo Corredor
+    }
+
+    // Verifica se uma posição X, Z está dentro de alguma parede
+    // Retorna true se bateu
+    checkCollision(x, z, radius = 3.0) {
+        for (const box of this.colliders) {
+            if (x + radius > box.minX && x - radius < box.maxX &&
+                z + radius > box.minZ && z - radius < box.maxZ) {
+                return true;
+            }
+        }
+        return false;
     }
 
     _buildArchitecture(gl) {
