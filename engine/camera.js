@@ -6,7 +6,7 @@ export class Camera {
         this.canvas = gl.canvas;
 
         // Estado da Câmera
-        this.position = [0, 20, 160];
+        this.position = [0, 22, 160];
         this.yaw = -90;
         this.pitch = 0;
 
@@ -53,13 +53,11 @@ export class Camera {
         if (keys['a']) this.yaw -= rotationSpeed;
         if (keys['d']) this.yaw += rotationSpeed;
 
-        // Opcional: Adicionar Pitch (olhar para cima/baixo) com as setas
         if (keys['arrowup']) this.pitch = Math.min(this.pitch + rotationSpeed, 60);
         if (keys['arrowdown']) this.pitch = Math.max(this.pitch - rotationSpeed, -60);
 
         const yawRad = this.yaw * Math.PI / 180;
 
-        // Movimento lateral (Strafe) - Opcional mas melhora a navegação
         if (keys['w']) {
             this.position[0] += Math.cos(yawRad) * moveSpeed;
             this.position[2] += Math.sin(yawRad) * moveSpeed;

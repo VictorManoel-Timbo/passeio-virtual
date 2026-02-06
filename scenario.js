@@ -4,189 +4,180 @@ import { Transform } from "./engine/transform.js";
 import { Light } from "./engine/light.js";
 
 export class Scenario {
-    /**
-     * @param {WebGLRenderingContext} gl 
-     * @param {Object} loadedModels - Objeto contendo { id: { mesh, textures } }
-     * @param {Object} globalTextures - Texturas avulsas (chão, sol, etc)
-     */
     constructor(gl, loadedModels, globalTextures) {
         this.gl = gl;
-        this.elements = [];
         this.textures = globalTextures;
         this.models = loadedModels;
 
-        // --- 1. CONFIGURAÇÕES GERAIS ---
-        const roomSize = 240;
-        const wallH = 50;
-        const wallT = 2.0;
-        const pillarSize = 15.0;
-        const corrWidth = 24;
-        const corrLen = 60;
+        // Inicialização de Arrays e Dicionários
+        this.elements = [];
+        this.entities = {};
 
-        const hS = roomSize / 2;
-        const hH = wallH / 2;
-        const corridorZCenter = hS + corrLen / 2;
+        // 1. Configurações e Materiais
+        this._initSettings();
+        this._setupMaterials(gl);
 
-        const frameW = 24;
-        const frameH = 32;
-        const frameY = 25;
+        // 2. Componentes da Cena
+        this._setupLights();
+        this._initEntities();
+        this._buildArchitecture(gl);
+    }
 
-        // --- 2. CORES ---
-        const wallColor = [0.4, 0.4, 0.4, 1.0];
-        const pillarColor = [0.2, 0.2, 0.2, 1.0];
-        const frameColor = [0.4, 0.2, 0.1, 1.0];
-        const floorColor = [0.35, 0.15, 0.05, 1.0];
-        const ceilingColor = [0.02, 0.02, 0.25, 1.0];
+    // --- MÉTODOS DE ORGANIZAÇÃO (PRIVADOS POR CONVENÇÃO) ---
 
-        // --- 3. CONFIGURAÇÃO DAS LUZES ---
-        this.ceilingLight = new Light("spot");
-        this.ceilingLight.position = [0, wallH - 2, 0];
-        this.ceilingLight.color = [1.2, 0.8, 0.0];
+    _initSettings() {
+        // Centralizei as constantes aqui
+        this.cfg = {
+            roomSize: 240, wallH: 50, wallT: 2.0, pillarSize: 15.0,
+            corrWidth: 24, corrLen: 60, frameW: 24, frameH: 32, frameY: 25,
+            colors: {
+                wall: [0.4, 0.4, 0.4, 1.0], pillar: [0.2, 0.2, 0.2, 1.0],
+                frame: [0.4, 0.2, 0.1, 1.0], floor: [0.35, 0.15, 0.05, 1.0],
+                ceiling: [0.02, 0.02, 0.25, 1.0]
+            }
+        };
+        this.hS = this.cfg.roomSize / 2;
+        this.hH = this.cfg.wallH / 2;
+    }
 
-        this.movingLight = new Light("point");
-        this.movingLight.color = [1.0, 0.8, 0.6];
-
-        this.sunData = this.models['sun'];
-        this.sunMatrix = Transform.identity();
-
-        // --- CRIAR TEXTURA BRANCA AUXILIAR (Para objetos sólidos) ---
-        // Cria uma textura de 1 pixel branco na memória da GPU
+    _setupMaterials(gl) {
         this.whiteGlTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.whiteGlTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
-            1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
-            new Uint8Array([255, 255, 255, 255])); // R, G, B, A (Branco Total)
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, new Uint8Array([255, 255, 255, 255]));
 
-        // Objeto "falso" que imita sua classe Texture para ser usado no draw
         this.solidTexture = {
-            isLoaded: true,  // Diz para a Mesh que pode desenhar
-            texture: this.whiteGlTexture, // Segurança caso a Mesh tente acessar direto
+            isLoaded: true,
             bind: (unit = 0) => {
                 gl.activeTexture(gl.TEXTURE0 + unit);
                 gl.bindTexture(gl.TEXTURE_2D, this.whiteGlTexture);
             }
-        }
+        };
+    }
 
-        // --- 4. GEOMETRIAS BÁSICAS ---
-        // Criamos meshes estáticas usando o padrão de grupo único "default"
-        const meshPillar = new Mesh(gl, { "default": Geometry.createBox(pillarSize, wallH, pillarSize, pillarColor) });
-        const meshFrame = new Mesh(gl, { "default": Geometry.createBox(frameW, frameH, 0.5, frameColor) });
-        const meshRoomCeiling = new Mesh(gl, { "default": Geometry.createBox(roomSize, 0.5, roomSize, ceilingColor) });
-        const meshCorrCeiling = new Mesh(gl, { "default": Geometry.createBox(corrWidth, 0.5, corrLen, ceilingColor) });
+    _setupLights() {
+        this.ceilingLight = new Light("spot");
+        this.ceilingLight.position = [0, this.cfg.wallH - 2, 0];
+        this.ceilingLight.color = [1.2, 1.0, 0.0];
 
-        // --- 5. CONFIGURAÇÃO DO MODELO CENTRAL (Saori ou similar) ---
-        // Usamos o ID definido no models.json
-        if (this.models['saori']) {
-            this.saoriData = this.models['saori'];
-            this.saoriMatrix = Transform.multiplyMatrices(
-                Transform.translate(Transform.identity(), 0, 0, 0),
-                Transform.scale(Transform.identity(), 20, 20, 20)
-            );
-        }
+        this.movingLight = new Light("point");
+        this.movingLight.color = [0.6, 0.8, 1.2];
+    }
 
-        // --- CONTROLE DAS TEXTURAS DOS QUADROS ---
-        let currentTelaIndex = 1; // Começa na tela1
-
-        // Função auxiliar para pegar a próxima textura da lista
-        const getNextFrameTexture = () => {
-            const texKey = `tela${currentTelaIndex}`; // Cria string "tela1", "tela2"...
-            const texture = this.textures[texKey];    // Pega a textura carregada
-            currentTelaIndex++;                       // Prepara para o próximo (1 -> 2)
-            return texture;
+    _initEntities() {
+        const modelConfigs = {
+            'sun': { pos: [0, 0, 0], scale: [4, 4, 4] },
+            'door': { pos: [0, 18, 180], scale: [2.5, 3, 2] },
+            'saori': { pos: [0, 0, 0], scale: [25, 25, 25] }
         };
 
-        // --- 6. MONTAGEM DA ESTRUTURA (Pilares e Quadros) ---
-        const pillarPos = [
-            [hS, -hS], [-hS, -hS], [hS, hS], [-hS, hS],
-            [corrWidth / 2 + pillarSize / 2, hS], [-corrWidth / 2 - pillarSize / 2, hS]
+        Object.keys(modelConfigs).forEach(id => {
+            if (this.models[id]) {
+                const conf = modelConfigs[id];
+                let matrix = Transform.translate(Transform.identity(), ...conf.pos);
+                matrix = Transform.multiplyMatrices(matrix, Transform.scale(Transform.identity(), ...conf.scale));
+                this.entities[id] = { data: this.models[id], matrix: matrix };
+            }
+        });
+    }
+
+    _buildArchitecture(gl) {
+        const { pillarSize, wallH, frameW, frameH, colors, corrWidth } = this.cfg;
+        const corridorZCenter = this.hS + this.cfg.corrLen / 2;
+
+        // Meshes reutilizáveis
+        const meshPillar = new Mesh(gl, { "default": Geometry.createBox(pillarSize, wallH, pillarSize, colors.pillar) });
+        const meshFrame = new Mesh(gl, { "default": Geometry.createBox(frameW, frameH, 0.5, colors.frame) });
+
+        // Controle de texturas das telas
+        let currentTelaIndex = 1;
+        const getTex = () => this.textures[`tela${currentTelaIndex++}`];
+
+        // 1. Pilares (Cantos da Sala + Entrada do Corredor)
+        const pillarPositions = [
+            [this.hS, -this.hS], [-this.hS, -this.hS], // Cantos traseiros
+            [this.hS, this.hS], [-this.hS, this.hS],   // Cantos frontais
+            [corrWidth / 2 + pillarSize / 2, this.hS], // Entrada Corredor Dir
+            [-corrWidth / 2 - pillarSize / 2, this.hS] // Entrada Corredor Esq
         ];
-        pillarPos.forEach(pos => {
+
+        pillarPositions.forEach(pos => {
             this.elements.push({
-                mesh: meshPillar, matrix: Transform.translate(Transform.identity(), pos[0], hH, pos[1]),
+                mesh: meshPillar,
+                matrix: Transform.translate(Transform.identity(), pos[0], this.hH, pos[1]),
                 texture: this.textures['pillar']
             });
         });
 
-        const placeGallery = (count, isLongWall, side) => {
-            const step = roomSize / (count + 1);
-            for (let i = 1; i <= count; i++) {
-                // ... (código dos Pilares continua igual) ...
-                const colPos = -hS + step * i;
-                if (Math.abs(colPos) < hS - pillarSize) {
-                    let pM = isLongWall ?
-                        Transform.translate(Transform.identity(), colPos, hH, side * hS) :
-                        Transform.translate(Transform.identity(), side * hS, hH, colPos);
-                    this.elements.push({ mesh: meshPillar, matrix: pM, texture: this.textures['pillar'] });
-                }
+        // 2. Galerias
+        this._placeGallery(gl, meshPillar, meshFrame, getTex, 3, true, -1);
+        this._placeGallery(gl, meshPillar, meshFrame, getTex, 2, false, 1);
+        this._placeGallery(gl, meshPillar, meshFrame, getTex, 2, false, -1);
 
-                // --- AQUI COMEÇA A MUDANÇA DOS QUADROS ---
-                const framePos = colPos - (step / 2);
-                const frameOffset = hS - (wallT / 2 + 0.3);
+        // 3. Demais estruturas
+        this._addStructureElements(gl, corridorZCenter, getTex);
+    }
 
-                let fM = isLongWall ?
-                    Transform.translate(Transform.identity(), framePos, frameY, side * frameOffset) :
-                    Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, frameY, framePos), Transform.rotateY(Math.PI / 2));
+    _placeGallery(gl, meshPillar, meshFrame, getTex, count, isLongWall, side) {
+        const step = this.cfg.roomSize / (count + 1);
+        for (let i = 1; i <= count; i++) {
+            const colPos = -this.hS + step * i;
+            const framePos = colPos - (step / 2);
+            const frameOffset = this.hS - (this.cfg.wallT / 2 + 0.3);
 
-                // ADICIONA O QUADRO COM A PRÓXIMA TEXTURA
-                this.elements.push({
-                    mesh: meshFrame,
-                    matrix: fM,
-                    texture: getNextFrameTexture() // <--- CHAMA A FUNÇÃO AQUI
-                });
+            // Lógica de Matrix para Pilares e Quadros
+            let pM = isLongWall ? Transform.translate(Transform.identity(), colPos, this.hH, side * this.hS) : Transform.translate(Transform.identity(), side * this.hS, this.hH, colPos);
+            this.elements.push({ mesh: meshPillar, matrix: pM, texture: this.textures['pillar'] });
 
-                // Se for o último pilar, adiciona o quadro final da sequência
-                if (i === count) {
-                    const lastFramePos = colPos + (step / 2);
-                    let lfM = isLongWall ?
-                        Transform.translate(Transform.identity(), lastFramePos, frameY, side * frameOffset) :
-                        Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, frameY, lastFramePos), Transform.rotateY(Math.PI / 2));
+            let fM = isLongWall ? Transform.translate(Transform.identity(), framePos, this.cfg.frameY, side * frameOffset) :
+                Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, this.cfg.frameY, framePos), Transform.rotateY(Math.PI / 2));
+            this.elements.push({ mesh: meshFrame, matrix: fM, texture: getTex() });
 
-                    this.elements.push({
-                        mesh: meshFrame,
-                        matrix: lfM,
-                        texture: getNextFrameTexture() // <--- CHAMA A FUNÇÃO AQUI TAMBÉM
-                    });
-                }
+            if (i === count) {
+                const lastFramePos = colPos + (step / 2);
+                let lfM = isLongWall ? Transform.translate(Transform.identity(), lastFramePos, this.cfg.frameY, side * frameOffset) :
+                    Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, this.cfg.frameY, lastFramePos), Transform.rotateY(Math.PI / 2));
+                this.elements.push({ mesh: meshFrame, matrix: lfM, texture: getTex() });
             }
-        };
+        }
+    }
 
-        placeGallery(3, true, -1);
-        placeGallery(2, false, 1);
-        placeGallery(2, false, -1);
+    _addStructureElements(gl, corridorZCenter, getTex) {
+        const { colors, wallT, wallH, corrWidth, corrLen, frameY } = this.cfg;
+        const frontWallCenter = (this.hS + (corrWidth / 2 + this.cfg.pillarSize)) / 2;
+        const frontWallW = (this.cfg.roomSize - corrWidth) / 2 - this.cfg.pillarSize;
 
-        const frontWallCenter = (hS + (corrWidth / 2 + pillarSize)) / 2;
-        const frontWallW = (roomSize - corrWidth) / 2 - pillarSize;
-
-        // --- 7. ADICIONANDO PAREDES E CHÃO ---
         this.elements.push(
-            { mesh: meshFrame, matrix: Transform.translate(Transform.identity(), frontWallCenter, frameY, hS - 1.5), texture: getNextFrameTexture() },
-            { mesh: meshFrame, matrix: Transform.translate(Transform.identity(), -frontWallCenter, frameY, hS - 1.5), texture: getNextFrameTexture() },
-            { mesh: meshRoomCeiling, matrix: Transform.translate(Transform.identity(), 0, wallH, 0), texture: this.textures['ceiling'] },
-            { mesh: meshCorrCeiling, matrix: Transform.translate(Transform.identity(), 0, wallH, corridorZCenter), texture: this.textures['ceiling'] },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(roomSize - pillarSize, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), 0, hH, -hS) },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor) }), matrix: Transform.translate(Transform.identity(), hS, hH, 0) },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, roomSize - pillarSize, wallColor) }), matrix: Transform.translate(Transform.identity(), -hS, hH, 0) },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), frontWallCenter, hH, hS) },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), -frontWallCenter, hH, hS) },
+            // --- Quadros da Parede da Frente (Entrada do Corredor) ---
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(this.cfg.frameW, this.cfg.frameH, 0.5, colors.frame) }), matrix: Transform.translate(Transform.identity(), frontWallCenter, frameY, this.hS - 1.5), texture: getTex() },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(this.cfg.frameW, this.cfg.frameH, 0.5, colors.frame) }), matrix: Transform.translate(Transform.identity(), -frontWallCenter, frameY, this.hS - 1.5), texture: getTex() },
 
-            { mesh: new Mesh(gl, { "default": Geometry.createPlane(roomSize, roomSize, floorColor) }), matrix: Transform.identity() },
-            { mesh: new Mesh(gl, { "default": Geometry.createPlane(corrWidth, corrLen, floorColor) }), matrix: Transform.translate(Transform.identity(), 0, 0, corridorZCenter) },
+            // --- Tetos ---
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(this.cfg.roomSize, 0.5, this.cfg.roomSize, colors.ceiling) }), matrix: Transform.translate(Transform.identity(), 0, wallH, 0), texture: this.textures['ceiling'] },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(corrWidth, 0.5, corrLen, colors.ceiling) }), matrix: Transform.translate(Transform.identity(), 0, wallH, corridorZCenter), texture: this.textures['ceiling'] },
 
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, wallColor) }), matrix: Transform.translate(Transform.identity(), corrWidth / 2, hH, corridorZCenter) },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, wallColor) }), matrix: Transform.translate(Transform.identity(), -corrWidth / 2, hH, corridorZCenter) },
-            { mesh: new Mesh(gl, { "default": Geometry.createBox(corrWidth, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), 0, hH, hS + corrLen) }
+            // --- Paredes da Sala Principal ---
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(this.cfg.roomSize - this.cfg.pillarSize, wallH, wallT, colors.wall) }), matrix: Transform.translate(Transform.identity(), 0, this.hH, -this.hS) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, this.cfg.roomSize - this.cfg.pillarSize, colors.wall) }), matrix: Transform.translate(Transform.identity(), this.hS, this.hH, 0) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, this.cfg.roomSize - this.cfg.pillarSize, colors.wall) }), matrix: Transform.translate(Transform.identity(), -this.hS, this.hH, 0) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, colors.wall) }), matrix: Transform.translate(Transform.identity(), frontWallCenter, this.hH, this.hS) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, colors.wall) }), matrix: Transform.translate(Transform.identity(), -frontWallCenter, this.hH, this.hS) },
+
+            // --- Pisos ---
+            { mesh: new Mesh(gl, { "default": Geometry.createPlane(this.cfg.roomSize, this.cfg.roomSize, colors.floor) }), matrix: Transform.identity() },
+            { mesh: new Mesh(gl, { "default": Geometry.createPlane(corrWidth, corrLen, colors.floor) }), matrix: Transform.translate(Transform.identity(), 0, 0, corridorZCenter) },
+
+            // --- Paredes do Corredor ---
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, colors.wall) }), matrix: Transform.translate(Transform.identity(), corrWidth / 2, this.hH, corridorZCenter) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, colors.wall) }), matrix: Transform.translate(Transform.identity(), -corrWidth / 2, this.hH, corridorZCenter) },
+            { mesh: new Mesh(gl, { "default": Geometry.createBox(corrWidth, wallH, wallT, colors.wall) }), matrix: Transform.translate(Transform.identity(), 0, this.hH, this.hS + corrLen) }
         );
     }
 
     update(deltaTime) {
         this.movingLight.updateOrbit(deltaTime, 90.0, 0.4, 40.0);
-        if (this.sunData) {
-            const lx = this.movingLight.position[0];
-            const ly = this.movingLight.position[1];
-            const lz = this.movingLight.position[2];
-
-            this.sunMatrix = Transform.translate(Transform.identity(), lx, ly, lz);
-            this.sunMatrix = Transform.multiplyMatrices(this.sunMatrix, Transform.scale(Transform.identity(), 3, 3, 3));
+        if (this.entities['sun']) {
+            const [lx, ly, lz] = this.movingLight.position;
+            this.entities['sun'].matrix = Transform.multiplyMatrices(Transform.translate(Transform.identity(), lx, ly, lz), Transform.scale(Transform.identity(), 4, 4, 4));
         }
     }
 
@@ -194,25 +185,7 @@ export class Scenario {
         this.ceilingLight.bind(gl, locations, "u_Ceiling");
         this.movingLight.bind(gl, locations, "u_Sphere");
 
-        // Desenha elementos estáticos do cenário
-        this.elements.forEach(el => {
-            // Se o elemento tem textura, usa ela. 
-            // Se NÃO tem, usa a textura branca sólida
-            const textureToUse = el.texture ? el.texture : this.solidTexture;
-
-            const texParam = { "default": textureToUse };
-
-            el.mesh.draw(gl, locations, viewProjMatrix, el.matrix, texParam);
-        })
-
-        if (this.saoriData) {
-            this.saoriData.mesh.draw(gl, locations, viewProjMatrix, this.saoriMatrix, this.saoriData.textures);
-        }
-
-        // Desenha a esfera da luz
-        if (this.sunData) {
-            // O sol geralmente não deve ser afetado por sombras, mas no shader atual ele será tratado como um objeto comum
-            this.sunData.mesh.draw(gl, locations, viewProjMatrix, this.sunMatrix, this.sunData.textures);
-        }
+        this.elements.forEach(el => el.mesh.draw(gl, locations, viewProjMatrix, el.matrix, { "default": el.texture || this.solidTexture }));
+        Object.values(this.entities).forEach(ent => ent.data.mesh.draw(gl, locations, viewProjMatrix, ent.matrix, ent.data.textures));
     }
 }
