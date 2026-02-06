@@ -207,8 +207,7 @@ class App {
       // Uniforms (Phong Lighting)
       u_ViewPos: this.gl.getUniformLocation(this.program, 'u_ViewPos'),
       u_Sampler: this.gl.getUniformLocation(this.program, "u_Sampler"),
-      // u_LightPos: this.gl.getUniformLocation(this.program, 'u_LightPos'),
-      // u_LightColor: this.gl.getUniformLocation(this.program, 'u_LightColor'),
+      u_UseTexture: this.gl.getUniformLocation(this.program, "u_UseTexture"),
 
       u_SpherePos: this.gl.getUniformLocation(this.program, 'u_SpherePos'),
       u_SphereColor: this.gl.getUniformLocation(this.program, 'u_SphereColor'),

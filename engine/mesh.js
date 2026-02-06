@@ -35,17 +35,22 @@ export class Mesh {
 
         // 2. Desenha cada Sub-Mesh (cada parte que usa um material/textura diferente)
         for (const [materialName, meshData] of Object.entries(this.subMeshes)) {
+            let hasTexture = false;
 
-            // Tenta encontrar a textura correspondente a esta parte no dicionário
             if (textureDict && textureDict[materialName]) {
                 const texture = textureDict[materialName];
                 if (texture.isLoaded) {
                     texture.bind(0);
                     gl.uniform1i(locations.u_Sampler, 0);
-                    // Aqui você poderia enviar um uniform "u_UseTexture = true" se seu shader suportar
+                    hasTexture = true;
                 }
             }
 
+            // Avisa o shader se deve usar textura ou não
+            if (locations.u_UseTexture) {
+                gl.uniform1i(locations.u_UseTexture, hasTexture ? 1 : 0);
+            }
+            
             // Bind dos atributos desta sub-mesh específica
             this._bindAttribute(locations.a_Position, meshData.vertexBuffer, 3);
             this._bindAttribute(locations.a_Normal, meshData.normalBuffer, 3);

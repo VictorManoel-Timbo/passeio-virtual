@@ -154,8 +154,15 @@ export class OBJDoc {
                     mtl.materials.push(currentMaterial);
                     continue;
                 case 'Kd':
+                case 'Ka':
                     if (currentMaterial) {
-                        currentMaterial.color = { r: sp.getFloat(), g: sp.getFloat(), b: sp.getFloat(), a: 1 };
+                        const r = sp.getFloat();
+                        const g = sp.getFloat();
+                        const b = sp.getFloat();
+                        // Só atualiza se os valores forem válidos (não NaN)
+                        if (!isNaN(r)) {
+                            currentMaterial.color = { r: r, g: g, b: b, a: 1.0 };
+                        }
                     }
                     continue;
                 case 'map_Kd':

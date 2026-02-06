@@ -66,7 +66,7 @@ export class Scenario {
     _initEntities() {
         const modelConfigs = {
             'sun': { pos: [0, 0, 0], scale: [4, 4, 4] },
-            'door': { pos: [0, 18, 180], scale: [2.5, 3, 2] },
+            'door': { pos: [0, 0, 179], scale: [5.25, 6, 5.25] },
             'saori': { pos: [0, 0, 0], scale: [25, 25, 25] }
         };
 

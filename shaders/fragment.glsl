@@ -11,6 +11,7 @@ uniform vec3 u_SpherePos;
 uniform vec3 u_SphereColor;
 
 uniform vec3 u_ViewPos; // Posição da Câmera
+uniform bool u_UseTexture;
 uniform sampler2D u_Sampler;
 
 varying vec3 v_Normal;
@@ -19,8 +20,11 @@ varying vec4 v_Color;
 varying vec2 v_TexCoord;
 
 void main() {
-  vec4 texColor = texture2D(u_Sampler, v_TexCoord);
-
+  vec4 texColor = vec4(1.0, 1.0, 1.0, 1.0);
+  if(u_UseTexture) {
+    texColor = texture2D(u_Sampler, v_TexCoord);
+  }
+  
   vec3 norm = normalize(v_Normal);
   vec3 viewDir = normalize(u_ViewPos - v_Position);
   vec3 result = vec3(0.5); // Luz ambiente global
