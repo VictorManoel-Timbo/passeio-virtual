@@ -6,7 +6,7 @@ export class Camera {
         this.canvas = gl.canvas;
 
         // Estado da Câmera
-        this.position = [0, 20, 150];
+        this.position = [0, 20, 160];
         this.yaw = -90;
         this.pitch = 0;
 
@@ -47,7 +47,7 @@ export class Camera {
     update(deltaTime, keys) {
         if (!keys) return;
 
-        const moveSpeed = 5.0 * deltaTime;
+        const moveSpeed = 15.0 * deltaTime;
         const rotationSpeed = 90.0 * deltaTime;
 
         if (keys['a']) this.yaw -= rotationSpeed;

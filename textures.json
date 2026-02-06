@@ -1,6 +1,4 @@
 {
-    "floor": "./assets/textures/sonic1.jpg",
-    "sun": "./assets/textures/sonic1.jpg",
     "pillar": "./assets/textures/piso_sala.jpg",
     "ceiling": "./assets/textures/ceu_estrelado.jpg",
     "tela1": "./assets/textures/Aquário.png",
@@ -14,5 +12,5 @@
     "tela9": "./assets/textures/Peixes.png",
     "tela10": "./assets/textures/Sagitário.png",
     "tela11": "./assets/textures/Touro.png",
-    "tela12": "./assets/textures/sonic1.jpg"
+    "tela12": "./assets/textures/Virgem.png"
 }

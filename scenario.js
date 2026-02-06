@@ -12,8 +12,8 @@ export class Scenario {
     constructor(gl, loadedModels, globalTextures) {
         this.gl = gl;
         this.elements = [];
-        this.textures = globalTextures; // Texturas como 'floor', 'sun', etc.
-        this.models = loadedModels;      // Aqui está a Saori e outros OBJs
+        this.textures = globalTextures;
+        this.models = loadedModels;
 
         // --- 1. CONFIGURAÇÕES GERAIS ---
         const roomSize = 240;
@@ -33,18 +33,18 @@ export class Scenario {
 
         // --- 2. CORES ---
         const wallColor = [0.4, 0.4, 0.4, 1.0];
-        const pillarColor = [0.2, 0.2, 0.2, 1.0]; //[1.0, 1.0, 1.0, 1.0];
+        const pillarColor = [0.2, 0.2, 0.2, 1.0];
         const frameColor = [0.4, 0.2, 0.1, 1.0];
         const floorColor = [0.35, 0.15, 0.05, 1.0];
-        const ceilingColor = [0.02, 0.02, 0.25, 1.0]; //[1.0, 1.0, 1.0, 1.0];
+        const ceilingColor = [0.02, 0.02, 0.25, 1.0];
 
         // --- 3. CONFIGURAÇÃO DAS LUZES ---
         this.ceilingLight = new Light("spot");
         this.ceilingLight.position = [0, wallH - 2, 0];
-        this.ceilingLight.color = [0.4, 0.5, 0.8];
+        this.ceilingLight.color = [1.2, 0.8, 0.0];
 
         this.movingLight = new Light("point");
-        this.movingLight.color = [0.6, 1.0, 0.8];
+        this.movingLight.color = [1.0, 0.8, 0.6];
 
         this.sunData = this.models['sun'];
         this.sunMatrix = Transform.identity();
@@ -53,10 +53,10 @@ export class Scenario {
         // Cria uma textura de 1 pixel branco na memória da GPU
         this.whiteGlTexture = gl.createTexture();
         gl.bindTexture(gl.TEXTURE_2D, this.whiteGlTexture);
-        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, 
-                    1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE, 
-                    new Uint8Array([255, 255, 255, 255])); // R, G, B, A (Branco Total)
-        
+        gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA,
+            1, 1, 0, gl.RGBA, gl.UNSIGNED_BYTE,
+            new Uint8Array([255, 255, 255, 255])); // R, G, B, A (Branco Total)
+
         // Objeto "falso" que imita sua classe Texture para ser usado no draw
         this.solidTexture = {
             isLoaded: true,  // Diz para a Mesh que pode desenhar
@@ -101,8 +101,9 @@ export class Scenario {
             [corrWidth / 2 + pillarSize / 2, hS], [-corrWidth / 2 - pillarSize / 2, hS]
         ];
         pillarPos.forEach(pos => {
-            this.elements.push({ mesh: meshPillar, matrix: Transform.translate(Transform.identity(), pos[0], hH, pos[1]), 
-            texture: this.textures['pillar']
+            this.elements.push({
+                mesh: meshPillar, matrix: Transform.translate(Transform.identity(), pos[0], hH, pos[1]),
+                texture: this.textures['pillar']
             });
         });
 
@@ -121,15 +122,15 @@ export class Scenario {
                 // --- AQUI COMEÇA A MUDANÇA DOS QUADROS ---
                 const framePos = colPos - (step / 2);
                 const frameOffset = hS - (wallT / 2 + 0.3);
-                
+
                 let fM = isLongWall ?
                     Transform.translate(Transform.identity(), framePos, frameY, side * frameOffset) :
                     Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, frameY, framePos), Transform.rotateY(Math.PI / 2));
-                
+
                 // ADICIONA O QUADRO COM A PRÓXIMA TEXTURA
-                this.elements.push({ 
-                    mesh: meshFrame, 
-                    matrix: fM, 
+                this.elements.push({
+                    mesh: meshFrame,
+                    matrix: fM,
                     texture: getNextFrameTexture() // <--- CHAMA A FUNÇÃO AQUI
                 });
 
@@ -139,10 +140,10 @@ export class Scenario {
                     let lfM = isLongWall ?
                         Transform.translate(Transform.identity(), lastFramePos, frameY, side * frameOffset) :
                         Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, frameY, lastFramePos), Transform.rotateY(Math.PI / 2));
-                    
-                    this.elements.push({ 
-                        mesh: meshFrame, 
-                        matrix: lfM, 
+
+                    this.elements.push({
+                        mesh: meshFrame,
+                        matrix: lfM,
                         texture: getNextFrameTexture() // <--- CHAMA A FUNÇÃO AQUI TAMBÉM
                     });
                 }
@@ -168,17 +169,8 @@ export class Scenario {
             { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), frontWallCenter, hH, hS) },
             { mesh: new Mesh(gl, { "default": Geometry.createBox(frontWallW, wallH, wallT, wallColor) }), matrix: Transform.translate(Transform.identity(), -frontWallCenter, hH, hS) },
 
-            // Chão com textura
-            {
-                mesh: new Mesh(gl, { "default": Geometry.createPlane(roomSize, roomSize, floorColor) }),
-                matrix: Transform.identity(),
-                //texture: this.textures['floor']
-            },
-            {
-                mesh: new Mesh(gl, { "default": Geometry.createPlane(corrWidth, corrLen, floorColor) }),
-                matrix: Transform.translate(Transform.identity(), 0, 0, corridorZCenter),
-                //texture: this.textures['floor']
-            },
+            { mesh: new Mesh(gl, { "default": Geometry.createPlane(roomSize, roomSize, floorColor) }), matrix: Transform.identity() },
+            { mesh: new Mesh(gl, { "default": Geometry.createPlane(corrWidth, corrLen, floorColor) }), matrix: Transform.translate(Transform.identity(), 0, 0, corridorZCenter) },
 
             { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, wallColor) }), matrix: Transform.translate(Transform.identity(), corrWidth / 2, hH, corridorZCenter) },
             { mesh: new Mesh(gl, { "default": Geometry.createBox(wallT, wallH, corrLen, wallColor) }), matrix: Transform.translate(Transform.identity(), -corrWidth / 2, hH, corridorZCenter) },
@@ -187,7 +179,7 @@ export class Scenario {
     }
 
     update(deltaTime) {
-        this.movingLight.updateOrbit(deltaTime, 35.0, 0.4, 40.0);
+        this.movingLight.updateOrbit(deltaTime, 90.0, 0.4, 40.0);
         if (this.sunData) {
             const lx = this.movingLight.position[0];
             const ly = this.movingLight.position[1];
@@ -205,11 +197,11 @@ export class Scenario {
         // Desenha elementos estáticos do cenário
         this.elements.forEach(el => {
             // Se o elemento tem textura, usa ela. 
-            // Se NÃO tem, usa a textura branca sólida (para limpar a textura anterior do Sol/Saori)
+            // Se NÃO tem, usa a textura branca sólida
             const textureToUse = el.texture ? el.texture : this.solidTexture;
-            
+
             const texParam = { "default": textureToUse };
-            
+
             el.mesh.draw(gl, locations, viewProjMatrix, el.matrix, texParam);
         })
 
@@ -220,13 +212,7 @@ export class Scenario {
         // Desenha a esfera da luz
         if (this.sunData) {
             // O sol geralmente não deve ser afetado por sombras, mas no shader atual ele será tratado como um objeto comum
-            this.sunData.mesh.draw(
-                gl,
-                locations,
-                viewProjMatrix,
-                this.sunMatrix,     // A matriz que atualizamos no update()
-                this.sunData.textures // As texturas carregadas (Sun.mtl)
-            );
+            this.sunData.mesh.draw(gl, locations, viewProjMatrix, this.sunMatrix, this.sunData.textures);
         }
     }
 }

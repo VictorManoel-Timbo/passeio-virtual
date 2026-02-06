@@ -4,7 +4,7 @@ export class Light {
         this.position = [0, 0, 0];
         this.color = [1.0, 1.0, 1.0];
         this.direction = [0, -1, 0]; // Padrão: apontando para baixo
-        this.cutoff = Math.cos(180 * Math.PI / 180);
+        this.cutoff = Math.cos(45 * Math.PI / 180);
         this.time = 0;
     }
 
