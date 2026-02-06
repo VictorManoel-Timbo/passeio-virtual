@@ -6,7 +6,7 @@ export class Camera {
         this.canvas = gl.canvas;
 
         // Estado da Câmera
-        this.position = [0, 10, 65];
+        this.position = [0, 20, 150];
         this.yaw = -90;
         this.pitch = 0;
 
