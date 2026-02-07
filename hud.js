@@ -10,68 +10,85 @@ export class HUD {
             // Quadros da parede traseira (lado negativo Z)
             frame_back_1: { 
                 text: "P. Traseira: Constelação de Aquário",
-                description: "Uma das 12 constelações do zodíaco. Aquário é representado pelo Portador de Água e é visível no hemisfério celeste norte.",
+                description: "Camus de Aquário Busca o Zero Absoluto com a Execução Aurora, pregando a frieza emocional para dominar o cosmo. A constelação é Ganimedes, o copeiro do Olimpo. Aquarianos são independentes, intelectuais e rebeldes, parecendo distantes para preservar sua visão lógica do mundo.",
                 image: "./assets/images/aquario"
             },
             frame_back_2: { 
                 text: "P. Traseira: Constelação de Áries",
-                description: "Constelação do zodíaco que marca a primavera no hemisfério norte. Conhecida por seus astros brilhantes e mitologia grega fascinante.",
+                description: "Mu de Áries Mestre da telecinese e reparador de armaduras, usa a Extinção Estelar para equilibrar defesa e ataque. A constelação remete ao Carneiro de Ouro buscado pelos Argonautas. Arianos são líderes natos e impulsivos, refletindo a iniciativa de Mu como guardião da primeira casa.",
                 image: "./assets/images/aries"
             },
             frame_back_3: { 
                 text: "P. Traseira: Constelação de Câncer",
-                description: "A constelação mais fraca do zodíaco. Câncer contém o aglomerado de estrelas Messier 44, visível a olho nu em noites claras.",
+                description: "Máscara da Morte de Câncer Envia almas ao inferno com as Ondas do Inferno (Sekishiki).\
+                 A constelação é o caranguejo gigante que distraiu Hércules em uma de suas tarefas. Cancerianos são \
+                protetores com os seus, mas guardam rancor profundo e agem com autodefesa intensa quando feridos.",
                 image: "./assets/images/cancer"
             },
             frame_back_4: { 
                 text: "P. Traseira: Constelação de Capricórnio",
-                description: "Constelação do zodíaco que marca o solstício de inverno no hemisfério norte. Representa a metade inferior do caminho do sol.",
+                description: "Shura de Capricórnio Possui a Excalibur nos braços, cortando qualquer matéria com lealdade absoluta. A constelação remete à cabra Amalteia, que amamentou Zeus. Capricornianos são a essência da disciplina e ambição, focados em alcançar o topo através do trabalho duro e responsabilidade.",
                 image: "./assets/images/capricornio"
             },
 
             // Quadros da parede frontal direita (lado positivo X)
             frame_front_right_1: { 
                 text: "P. Direita: Constelação de Escorpião",
-                description: "Uma das constelações mais reconhecíveis, Escorpião é dominada pela estrela avermelhada Antares, o coração do escorpião.",
+                description: "Milo de Escorpião Ataca o sistema nervoso com a Agulha Escarlate.\
+                 Na mitologia, o Escorpião matou o caçador Órion, por isso as constelações\
+                 nunca aparecem juntas no céu. Escorpianos são intensos e misteriosos, com um instinto de vingança implacável e forte regeneração emocional.",
                 image: "./assets/images/escorpiao"
             },
             frame_front_right_2: { 
                 text: "P. Direita: Constelação de Gêmeos",
-                description: "Constelação do zodíaco caracterizada pelos gêmeos Castor e Pólux. Geralmente visível no céu de inverno do hemisfério norte.",
+                description: "Saga de Gêmeos Possui poder cataclísmico com a Explosão Galáctica, sofrendo\
+                 de dupla personalidade. A constelação honra os irmãos inseparáveis Castor e Pólux. Geminianos\
+                 são marcados pela dualidade e adaptação rápida, mudando de humor como as faces da máscara de Saga.",
                 image: "./assets/images/gemeos"
             },
             frame_front_right_3: { 
                 text: "P. Direita: Constelação de Leão",
-                description: "Uma das constelações mais luminosas do zodíaco. Leão contém a estrela brilhante Régulo e é facilmente identificável na primavera.",
+                description: "Aiolia de Leão Usa a velocidade da luz no\
+                 Relâmpago de Plasma, representando a justiça direta. A constelação é o Leão de Nemeia,\
+                 fera de pele impenetrável. Leoninos possuem magnetismo, orgulho e agem com o coração,\
+                 buscando reconhecimento constante, assim como Aiolia busca honra.",
                 image: "./assets/images/leao"
             },
 
             // Quadros da parede frontal esquerda (lado negativo X)
             frame_front_left_1: { 
                 text: "P. Esquerda: Constelação de Libra",
-                description: "A única constelação zodiacal que representa um objeto inanimado - a balança. Libra é símbolo de equilíbrio e justiça.",
+                description: "Dohko de Libra O Mestre Ancião guarda as armas de ouro e usa a Cólera dos 100 Dragões. \
+                Libra é a única constelação do zodíaco representada\
+                 por um objeto inanimado (a balança). Librianos buscam harmonia e diplomacia acima de tudo, pesando decisões cuidadosamente como um juiz.",
                 image: "./assets/images/libra"
             },
             frame_front_left_2: { 
                 text: "P. Esquerda: Constelação de Peixes",
-                description: "Constelação do zodíaco que marca a primavera no hemisfério sul. Peixes é frequentemente representado por dois peixes ligados.",
+                description: "Afrodite de Peixes Usa rosas letais para lutar, acreditando que a força define a justiça. A constelação representa a deusa Afrodite e Eros fugindo transformados em peixes atados por uma corda. Piscianos são sensíveis e intuitivos, vivendo em um mundo de sonhos que contrasta com o pragmatismo deste cavaleiro.",
                 image: "./assets/images/peixes"
             },
             frame_front_left_3: { 
                 text: "P. Esquerda: Constelação de Sagitário",
-                description: "Constelação do zodíaco que representa o arqueiro centauro. Sagitário contém muitos objetos do espaço profundo interessantes.",
+                description: "Aiolos de Sagitário O herói que salvou Atena guia os cavaleiros com seu Trovão Atômico mesmo após a morte. A constelação é o sábio centauro Quíron, tutor de heróis. Sagitarianos valorizam a liberdade, a verdade e o otimismo, mirando sempre no futuro como a flecha de Aiolos.",
                 image: "./assets/images/sagitario"
             },
 
             // Quadros da entrada do corredor
             frame_corridor_left: { 
                 text: "Entrada: Constelação de Virgem",
-                description: "Constelação do zodíaco que representa a deusa da justiça. Contém a estrela Spica e é a maior constelação do zodíaco.",
+                description: "Shaka de Virgem O \"homem mais próximo de Deus\", remove os sentidos com o Tesouro do Céu. \
+                A constelação liga-se a Astreia, a deusa da pureza e justiça. \
+                Virginianos são analíticos e buscam a perfeição, muitas vezes parecendo frios ou críticos devido ao alto padrão de exigência.",
                 image: "./assets/images/virgem"
             },
             frame_corridor_right: { 
                 text: "Entrada: Constelação de Touro",
-                description: "Constelação do zodíaco representada por um touro. Contém a estrela brilhante Aldebarã e o aglomerado Plêiades.",
+                description: "Aldebaran de Touro \
+                 Une força colossal e velocidade no Grande Chifre.\
+                  A estrela principal da constelação, Aldebaran, \
+                  é uma gigante laranja chamada \"Olho do Touro\". Taurinos são famosos pela teimosia e \
+                  lealdade protetora, características que definem a postura inabalável deste cavaleiro.",
                 image: "./assets/images/touro"
             },
             saori:{
