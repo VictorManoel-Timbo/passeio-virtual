@@ -45,7 +45,7 @@ Como o projeto carrega arquivos locais (`.obj`, `.mtl`, `.png`, `.json`), é nec
 
 ## Links do Projeto
 
-* **Apresentação de Slides:** [Link para os Slides do Projeto](https://exemplo.com/link-do-seu-slide)
+* **Apresentação de Slides:** [Link para os Slides do Projeto](https://docs.google.com/presentation/d/1VEQSREYNiV7vHvvsuZwyPIydOGYoO0kH3rtbJiBH5fE/edit?usp=sharing)
 * **Vídeo de Demonstração:** [Assista ao vídeo de execução no YouTube](https://youtu.be/eatv13TirXg?si=fjXqdabBRUSJKu_O)
 
 ---
