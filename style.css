@@ -112,9 +112,10 @@ canvas {
 
 .hud-image {
     width: 100%;
-    height: auto;
+    height: 386px;
     max-height: 400px;
     object-fit: cover;
+    object-position: top center;
     border-radius: 6px;
     border: 1px solid #ffd700;
     opacity: 0;

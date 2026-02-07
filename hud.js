@@ -74,6 +74,11 @@ export class HUD {
                 description: "Constelação do zodíaco representada por um touro. Contém a estrela brilhante Aldebarã e o aglomerado Plêiades.",
                 image: "./assets/images/touro"
             },
+            saori:{
+                text: "Saori: Deusa da Justiça",
+                description: "Saori Kido é a reencarnação da deusa grega Atena, protetora da Terra e líder dos Cavaleiros do Zodíaco.",
+                image: "./assets/images/saori"
+            }
         };
     }
 

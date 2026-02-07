@@ -14,7 +14,7 @@ export class Scenario {
         this.entities = {};
         this.colliders = [];
         this.framePositions = {}; // Armazena posições dos quadros para HUD
-
+         // Posição central de Saori para HUD
         // 1. Configurações e Materiais
         this._initSettings();
         this._setupMaterials(gl);
@@ -205,7 +205,7 @@ export class Scenario {
         // Identificador da galeria para rastrear quadros
         const wallName = isLongWall ? 'back' : (side > 0 ? 'front_right' : 'front_left');
         let frameCounter = 0;
-        
+        this.framePositions['saori'] = [0, 0, 0];
         for (let i = 1; i <= count; i++) {
             const colPos = -this.hS + step * i;
             const framePos = colPos - (step / 2);
