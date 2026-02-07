@@ -13,6 +13,7 @@ export class Scenario {
         this.elements = [];
         this.entities = {};
         this.colliders = [];
+        this.framePositions = {}; // Armazena posições dos quadros para HUD
 
         // 1. Configurações e Materiais
         this._initSettings();
@@ -200,6 +201,11 @@ export class Scenario {
 
     _placeGallery(gl, meshPillar, meshFrame, getTex, count, isLongWall, side) {
         const step = this.cfg.roomSize / (count + 1);
+        
+        // Identificador da galeria para rastrear quadros
+        const wallName = isLongWall ? 'back' : (side > 0 ? 'front_right' : 'front_left');
+        let frameCounter = 0;
+        
         for (let i = 1; i <= count; i++) {
             const colPos = -this.hS + step * i;
             const framePos = colPos - (step / 2);
@@ -209,15 +215,28 @@ export class Scenario {
             let pM = isLongWall ? Transform.translate(Transform.identity(), colPos, this.hH, side * this.hS) : Transform.translate(Transform.identity(), side * this.hS, this.hH, colPos);
             this.elements.push({ mesh: meshPillar, matrix: pM, texture: this.textures['pillar'] });
 
+            // Primeiro quadro da galeria
             let fM = isLongWall ? Transform.translate(Transform.identity(), framePos, this.cfg.frameY, side * frameOffset) :
                 Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, this.cfg.frameY, framePos), Transform.rotateY(Math.PI / 2));
             this.elements.push({ mesh: meshFrame, matrix: fM, texture: getTex() });
+            
+            // Registra a posição do quadro para HUD
+            frameCounter++;
+            const frameId = `frame_${wallName}_${frameCounter}`;
+            const framePosWorld = isLongWall ? [framePos, this.cfg.frameY, side * frameOffset] : [side * frameOffset, this.cfg.frameY, framePos];
+            this.framePositions[frameId] = framePosWorld;
 
             if (i === count) {
                 const lastFramePos = colPos + (step / 2);
                 let lfM = isLongWall ? Transform.translate(Transform.identity(), lastFramePos, this.cfg.frameY, side * frameOffset) :
                     Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, this.cfg.frameY, lastFramePos), Transform.rotateY(Math.PI / 2));
                 this.elements.push({ mesh: meshFrame, matrix: lfM, texture: getTex() });
+                
+                // Registra o último quadro
+                frameCounter++;
+                const lastFrameId = `frame_${wallName}_${frameCounter}`;
+                const lastFramePosWorld = isLongWall ? [lastFramePos, this.cfg.frameY, side * frameOffset] : [side * frameOffset, this.cfg.frameY, lastFramePos];
+                this.framePositions[lastFrameId] = lastFramePosWorld;
             }
         }
     }
@@ -226,6 +245,10 @@ export class Scenario {
         const { colors, wallT, wallH, corrWidth, corrLen, frameY } = this.cfg;
         const frontWallCenter = (this.hS + (corrWidth / 2 + this.cfg.pillarSize)) / 2;
         const frontWallW = (this.cfg.roomSize - corrWidth) / 2 - this.cfg.pillarSize;
+
+        // Registra os quadros da entrada do corredor
+        this.framePositions['frame_corridor_right'] = [frontWallCenter, frameY, this.hS - 1.5];
+        this.framePositions['frame_corridor_left'] = [-frontWallCenter, frameY, this.hS - 1.5];
 
         this.elements.push(
             // --- Quadros da Parede da Frente (Entrada do Corredor) ---

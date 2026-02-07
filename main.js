@@ -4,6 +4,7 @@ import { loadTextFile } from "./engine/utils.js";
 import { Scenario } from "./scenario.js";
 import { Texture } from "./engine/texture.js";
 import { Mesh } from "./engine/mesh.js";
+import { HUD } from "./hud.js";
 
 class App {
   constructor() {
@@ -19,6 +20,7 @@ class App {
     this.lastTime = 0;
     this.locations = null;
     this.textures = {};
+    this.hud = new HUD(); // Inicializa a HUD
 
     this.onEvent();
     this.init();
@@ -301,6 +303,9 @@ class App {
         // Se bater movendo em Z, cancela SÓ o movimento Z
         this.camera.position[2] = oldZ;
     }
+
+    // --- ATUALIZA HUD ---
+    this.hud.update(this.camera.position, this.scenario.framePositions);
   }
 
   render() {
