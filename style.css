@@ -3,8 +3,9 @@
 :root {
     color-scheme: light dark;
     --bg-color: light-dark(snow, #16171a);
-    --border_color: light-dark(slategray, #3f3f3f);
+    --border-color: light-dark(slategray, #3f3f3f);
     --text-color: light-dark(#242424, snow);
+    --shadow-color: light-dark(#00000080, #9999992a);
 }
 
 *,
@@ -53,9 +54,9 @@ canvas {
     height: auto;
     max-width: 1256px;
     max-height: 942px;
-    border: 2px solid var(--border_color);
+    border: 2px solid var(--border-color);
     border-radius: 16px;
-    box-shadow: 5px 5px 15px rgba(0, 0, 0, 0.5);
+    box-shadow: 5px 5px 15px var(--shadow-color);
     background-color: #000;
 }
 
@@ -148,6 +149,11 @@ canvas {
 
 .controls {
     order: 3;
+}
+
+.controls span {
+    font-size: large;
+    margin-bottom: 20px;
 }
 
 #authors {

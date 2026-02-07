@@ -12,6 +12,11 @@ class App {
     this.gl = this.canvas.getContext('webgl');
     if (!this.gl) alert("WebGL não suportado");
 
+    this.bgMusic = new Audio('./assets/trilha-sonora.mp3'); // Caminho do seu arquivo
+    this.bgMusic.loop = true;
+    this.bgMusic.volume = 0.5; 
+    this.audioStarted = false;
+
     this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.gl.viewport(0, 0, this.canvas.width, this.canvas.height);
 
@@ -108,7 +113,7 @@ class App {
 
     const objDoc = new OBJDoc(modelCfg.path);
     const objText = await (await fetch(modelCfg.path)).text();
-    
+
     // Importante: Use escala 1.0 aqui para pegar o tamanho original (raw)
     // A escala do jogo será aplicada depois no Scenario.js
     await objDoc.parse(objText, 1.0, false);
@@ -144,7 +149,7 @@ class App {
     // Verifica se é um Array. Se não for (é um objeto único), coloca dentro de um array [].
     // Se for nulo ou indefinido, usa um array vazio [].
     let groups = [];
-    
+
     if (Array.isArray(drawingInfo)) {
       groups = drawingInfo;
     } else if (drawingInfo && typeof drawingInfo === 'object') {
@@ -156,12 +161,12 @@ class App {
       // Proteção caso o grupo não tenha vértices
       if (!group.vertices) continue;
 
-      const vertices = group.vertices; 
-      
+      const vertices = group.vertices;
+
       for (let i = 0; i < vertices.length; i += 3) {
         const x = vertices[i];
-        const y = vertices[i+1];
-        const z = vertices[i+2];
+        const y = vertices[i + 1];
+        const z = vertices[i + 2];
 
         if (x < minX) minX = x;
         if (x > maxX) maxX = x;
@@ -174,7 +179,7 @@ class App {
 
     // Se nenhum vértice foi encontrado (minX continua Infinity), retorna caixa zerada
     if (minX === Infinity) {
-        return { min: [0, 0, 0], max: [0, 0, 0] };
+      return { min: [0, 0, 0], max: [0, 0, 0] };
     }
 
     return { min: [minX, minY, minZ], max: [maxX, maxY, maxZ] };
@@ -202,8 +207,22 @@ class App {
   }
 
   onEvent() {
-    window.addEventListener('keydown', e => this.keys[e.key.toLowerCase()] = true);
+    window.addEventListener('keydown', e => {
+      this.keys[e.key.toLowerCase()] = true;
+      if (!this.audioStarted) {
+        this.bgMusic.play().catch(e => console.log("Aguardando interação para áudio"));
+        this.audioStarted = true;
+      }
+    });
+
     window.addEventListener('keyup', e => this.keys[e.key.toLowerCase()] = false);
+
+    this.canvas.addEventListener('mousedown', () => {
+        if (!this.audioStarted) {
+            this.bgMusic.play();
+            this.audioStarted = true;
+        }
+    });
   }
 
   createProgram(vs, fs) {
@@ -294,14 +313,14 @@ class App {
 
     // A. Verifica colisão no eixo X
     if (this.scenario.checkCollision(this.camera.position[0], oldZ)) {
-        // Se bater movendo em X, cancela SÓ o movimento X
-        this.camera.position[0] = oldX; 
+      // Se bater movendo em X, cancela SÓ o movimento X
+      this.camera.position[0] = oldX;
     }
 
     // B. Verifica colisão no eixo Z
     if (this.scenario.checkCollision(this.camera.position[0], this.camera.position[2])) {
-        // Se bater movendo em Z, cancela SÓ o movimento Z
-        this.camera.position[2] = oldZ;
+      // Se bater movendo em Z, cancela SÓ o movimento Z
+      this.camera.position[2] = oldZ;
     }
 
     // --- ATUALIZA HUD ---

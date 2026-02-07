@@ -47,7 +47,7 @@ export class Camera {
     update(deltaTime, keys) {
         if (!keys) return;
 
-        const moveSpeed = 30.0 * deltaTime;
+        const moveSpeed = 20.0 * deltaTime;
         const rotationSpeed = 90.0 * deltaTime;
 
         if (keys['a']) this.yaw -= rotationSpeed;
