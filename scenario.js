@@ -13,7 +13,7 @@ export class Scenario {
         this.entities = {};
         this.colliders = [];
         this.framePositions = {}; // Armazena posições dos quadros para HUD
-        
+
         // Configurações e Materiais
         this._initSettings();
         this._setupMaterials(gl);
@@ -66,8 +66,8 @@ export class Scenario {
 
     _initEntities() {
         const modelConfigs = {
-            'sun':   { pos: [0, 0, 0], scale: [4, 4, 4], collidable: false },
-            'door':  { pos: [0, 0, 179], scale: [5.25, 6, 5.25], collidable: true },
+            'sun': { pos: [0, 0, 0], scale: [4, 4, 4], collidable: false },
+            'door': { pos: [0, 0, 179], scale: [5.25, 6, 5.25], collidable: true },
             'saori': { pos: [0, 0, 0], scale: [25, 25, 25], collidable: true }
         };
 
@@ -126,22 +126,22 @@ export class Scenario {
 
         // --- PAREDES DA FRENTE ---
         const frontWallW = (roomSize - corrWidth) / 2 - pillarSize;
-        const frontCenter = (hS + (corrWidth/2 + pillarSize)) / 2;
-        
+        const frontCenter = (hS + (corrWidth / 2 + pillarSize)) / 2;
+
         addWall(frontCenter, hS, frontWallW, wallT);  // Frente Dir
         addWall(-frontCenter, hS, frontWallW, wallT); // Frente Esq
 
         // --- PILARES ---
         const pPos = [
             [hS, -hS], [-hS, -hS], [hS, hS], [-hS, hS], // Cantos
-            [corrWidth/2 + pillarSize/2, hS], [-corrWidth/2 - pillarSize/2, hS] // Entrada
+            [corrWidth / 2 + pillarSize / 2, hS], [-corrWidth / 2 - pillarSize / 2, hS] // Entrada
         ];
         pPos.forEach(p => addWall(p[0], p[1], pillarSize, pillarSize));
 
         // --- CORREDOR ---
         const corrZ = hS + corrLen / 2;
-        addWall(corrWidth/2, corrZ, wallT, corrLen);  // Parede Dir 
-        addWall(-corrWidth/2, corrZ, wallT, corrLen); // Parede Esq 
+        addWall(corrWidth / 2, corrZ, wallT, corrLen);  // Parede Dir 
+        addWall(-corrWidth / 2, corrZ, wallT, corrLen); // Parede Esq 
         addWall(0, hS + corrLen, corrWidth, wallT);   // Fundo 
     }
 
@@ -171,9 +171,9 @@ export class Scenario {
         // Pilares (Cantos da Sala + Entrada)
         const pillarPositions = [
             [this.hS, -this.hS], [-this.hS, -this.hS],
-            [this.hS, this.hS], [-this.hS, this.hS], 
-            [corrWidth / 2 + pillarSize / 2, this.hS], 
-            [-corrWidth / 2 - pillarSize / 2, this.hS] 
+            [this.hS, this.hS], [-this.hS, this.hS],
+            [corrWidth / 2 + pillarSize / 2, this.hS],
+            [-corrWidth / 2 - pillarSize / 2, this.hS]
         ];
 
         pillarPositions.forEach(pos => {
@@ -195,7 +195,8 @@ export class Scenario {
 
     _placeGallery(gl, meshPillar, meshFrame, getTex, count, isLongWall, side) {
         const step = this.cfg.roomSize / (count + 1);
-        
+        const pillarSize = this.cfg.pillarSize;
+
         // Identificador da galeria para rastrear quadros
         const wallName = isLongWall ? 'back' : (side > 0 ? 'front_right' : 'front_left');
         let frameCounter = 0;
@@ -205,6 +206,16 @@ export class Scenario {
             const framePos = colPos - (step / 2);
             const frameOffset = this.hS - (this.cfg.wallT / 2 + 0.3);
 
+            let worldX = isLongWall ? colPos : side * this.hS;
+            let worldZ = isLongWall ? side * this.hS : colPos;
+
+            this.colliders.push({
+                minX: worldX - pillarSize / 2,
+                maxX: worldX + pillarSize / 2,
+                minZ: worldZ - pillarSize / 2,
+                maxZ: worldZ + pillarSize / 2
+            });
+
             // Lógica de Matrix para Pilares e Quadros
             let pM = isLongWall ? Transform.translate(Transform.identity(), colPos, this.hH, side * this.hS) : Transform.translate(Transform.identity(), side * this.hS, this.hH, colPos);
             this.elements.push({ mesh: meshPillar, matrix: pM, texture: this.textures['pillar'] });
@@ -213,7 +224,7 @@ export class Scenario {
             let fM = isLongWall ? Transform.translate(Transform.identity(), framePos, this.cfg.frameY, side * frameOffset) :
                 Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, this.cfg.frameY, framePos), Transform.rotateY(Math.PI / 2));
             this.elements.push({ mesh: meshFrame, matrix: fM, texture: getTex() });
-            
+
             // Registra a posição do quadro para HUD
             frameCounter++;
             const frameId = `frame_${wallName}_${frameCounter}`;
@@ -225,7 +236,7 @@ export class Scenario {
                 let lfM = isLongWall ? Transform.translate(Transform.identity(), lastFramePos, this.cfg.frameY, side * frameOffset) :
                     Transform.multiplyMatrices(Transform.translate(Transform.identity(), side * frameOffset, this.cfg.frameY, lastFramePos), Transform.rotateY(Math.PI / 2));
                 this.elements.push({ mesh: meshFrame, matrix: lfM, texture: getTex() });
-                
+
                 // Registra o último quadro
                 frameCounter++;
                 const lastFrameId = `frame_${wallName}_${frameCounter}`;
