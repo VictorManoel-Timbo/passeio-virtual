@@ -60,8 +60,6 @@ canvas {
     background-color: #000;
 }
 
-/* --- HUD (Head-Up Display) --- */
-
 .hud {
     position: absolute;
     bottom: 30px;
@@ -82,8 +80,6 @@ canvas {
     box-shadow: 0 0 20px rgba(255, 215, 0, 0.3);
     text-align: center;
 }
-
-/* --- HUD Description (Lado Direito) --- */
 
 .hud-description {
     position: absolute;
@@ -128,14 +124,10 @@ canvas {
     font-size: medium;
 }
 
-/* --- SEÇÕES INFERIORES (AUTORES E CONTROLES) --- */
-
 .producer,
 .controls {
     flex: 1;
-    /* Faz ambos dividirem o espaço disponível */
     min-width: 300px;
-    /* Impede que fiquem espremidos demais */
     padding: 30px;
     display: flex;
     flex-direction: column;
@@ -172,11 +164,9 @@ h2 {
     margin-bottom: 16px;
 }
 
-/* --- AJUSTES PARA TELAS GRANDES (ACIMA DE 1440px) --- */
 @media (min-width: 1441px) {
     body {
         flex-wrap: nowrap;
-        /* Volta a ficar tudo em uma linha só */
         align-items: center;
     }
 
@@ -184,31 +174,26 @@ h2 {
         width: auto;
         flex: 2;
         order: 2;
-        /* Canvas no centro */
     }
 
     .producer {
         width: 250px;
         flex: none;
         order: 1;
-        /* Autores na esquerda */
     }
 
     .controls {
         width: 250px;
         flex: none;
         order: 3;
-        /* Controles na direita */
     }
 
     canvas {
         width: 1256px;
         height: 768px;
-        /* Tamanho fixo ideal em telas gigantes */
     }
 }
 
-/* --- AJUSTE PARA CELULARES (ABAIXO DE 768px) --- */
 @media (max-width: 768px) {
 
     .producer,

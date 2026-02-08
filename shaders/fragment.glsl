@@ -10,7 +10,7 @@ uniform vec3 u_CeilingColor;
 uniform vec3 u_SpherePos;
 uniform vec3 u_SphereColor;
 
-uniform vec3 u_ViewPos; // Posição da Câmera
+uniform vec3 u_ViewPos; 
 uniform bool u_UseTexture;
 uniform sampler2D u_Sampler;
 
@@ -29,7 +29,7 @@ void main() {
   vec3 viewDir = normalize(u_ViewPos - v_Position);
   vec3 result = vec3(0.5); // Luz ambiente global
 
-    // --- 1. LUZ MÓVEL (POINT LIGHT) ---
+    // --- LUZ MÓVEL ---
   vec3 sphereLightDir = normalize(u_SpherePos - v_Position);
 
     // Difusa
@@ -38,12 +38,12 @@ void main() {
 
     // Especular (Brilho)
   vec3 reflectDirS = reflect(-sphereLightDir, norm);
-  float specS = pow(max(dot(viewDir, reflectDirS), 0.0), 32.0); // 32.0 é o brilho (shininess)
+  float specS = pow(max(dot(viewDir, reflectDirS), 0.0), 32.0); 
   vec3 specularS = 0.5 * specS * u_SphereColor;
 
   result += (diffuseS + specularS);
 
-    // --- 2. LUZ TETO (SPOTLIGHT) ---
+    // --- LUZ TETO ---
   vec3 lightToFrag = normalize(v_Position - u_CeilingPos);
   float theta = dot(lightToFrag, normalize(u_CeilingDir));
 

@@ -3,9 +3,8 @@ import { Transform } from "./transform.js";
 export class Mesh {
     constructor(gl, groupedDrawingInfo) {
         this.gl = gl;
-        this.subMeshes = {}; // Dicionário de grupos de buffers
+        this.subMeshes = {};
 
-        // groupedDrawingInfo é o objeto retornado pelo objDoc.getDrawingInfoGrouped()
         for (const [materialName, data] of Object.entries(groupedDrawingInfo)) {
             this.subMeshes[materialName] = {
                 vertexCount: data.vertices.length / 3,
@@ -25,7 +24,7 @@ export class Mesh {
     }
 
     draw(gl, locations, viewProjMatrix, modelMatrix, textureDict = null) {
-        // 1. Configurações Globais do Objeto (Matrizes)
+        // Configurações Globais do Objeto 
         const mvpMatrix = Transform.multiplyMatrices(viewProjMatrix, modelMatrix);
         gl.uniformMatrix4fv(locations.u_MvpMatrix, false, mvpMatrix);
         gl.uniformMatrix4fv(locations.u_ModelMatrix, false, modelMatrix);
@@ -33,7 +32,7 @@ export class Mesh {
         const normalMatrix = Transform.getNormalMatrix(modelMatrix);
         gl.uniformMatrix4fv(locations.u_NormalMatrix, false, normalMatrix);
 
-        // 2. Desenha cada Sub-Mesh (cada parte que usa um material/textura diferente)
+        // Desenha cada Sub-Mesh
         for (const [materialName, meshData] of Object.entries(this.subMeshes)) {
             let hasTexture = false;
 
@@ -46,12 +45,10 @@ export class Mesh {
                 }
             }
 
-            // Avisa o shader se deve usar textura ou não
             if (locations.u_UseTexture) {
                 gl.uniform1i(locations.u_UseTexture, hasTexture ? 1 : 0);
             }
             
-            // Bind dos atributos desta sub-mesh específica
             this._bindAttribute(locations.a_Position, meshData.vertexBuffer, 3);
             this._bindAttribute(locations.a_Normal, meshData.normalBuffer, 3);
             this._bindAttribute(locations.a_Color, meshData.colorBuffer, 4);
@@ -60,7 +57,6 @@ export class Mesh {
                 this._bindAttribute(locations.a_TexCoord, meshData.texCoordBuffer, 2);
             }
 
-            // Comando de desenho para esta parte
             gl.drawArrays(gl.TRIANGLES, 0, meshData.vertexCount);
         }
     }

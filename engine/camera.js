@@ -23,7 +23,7 @@ export class Camera {
         const aspect = this.canvas.width / this.canvas.height;
         this.projMatrix = Transform.perspective(this.fov, aspect, this.near, this.far);
 
-        // Calcula o vetor de direção (Front)
+        // Calcula o vetor de direção
         const yawRad = this.yaw * Math.PI / 180;
         const pitchRad = this.pitch * Math.PI / 180;
 

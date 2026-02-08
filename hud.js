@@ -99,7 +99,6 @@ export class HUD {
         };
     }
 
-    // Calcula distância entre player e um ponto
     calculateDistance(playerPos, framePos) {
         const dx = playerPos[0] - framePos[0];
         const dz = playerPos[2] - framePos[2];
@@ -111,7 +110,6 @@ export class HUD {
         let closestFrame = null;
         let closestDistance = this.maxDistance;
 
-        // Verifica qual quadro está mais perto
         for (const [frameId, framePos] of Object.entries(framePositions)) {
             const distance = this.calculateDistance(playerPos, framePos);
             
@@ -121,7 +119,6 @@ export class HUD {
             }
         }
 
-        // Atualiza o HUD se mudou de quadro
         if (closestFrame !== this.currentFrame) {
             this.currentFrame = closestFrame;
             this.updateDisplay();
@@ -136,7 +133,6 @@ export class HUD {
             this.hudElement.textContent = frameInfo.text;
             this.textElement.textContent = frameInfo.description;
             
-            // Carrega imagem com fallback WebP -> PNG
             this.loadImageWithFallback(frameInfo.image);
             
             this.hudElement.style.opacity = '1';
@@ -149,43 +145,32 @@ export class HUD {
     }
 
     async loadImageWithFallback(basePath) {
-        // Remove extensão se existir
         const pathWithoutExt = basePath.replace(/\.(webp|png)$/i, '');
-        
-        // Tenta WebP primeiro (mais eficiente)
         const webpPath = `${pathWithoutExt}.webp`;
         const pngPath = `${pathWithoutExt}.png`;
         
         try {
-            // Tenta carregar WebP
             const webpResponse = await fetch(webpPath, { method: 'HEAD' });
             if (webpResponse.ok) {
                 this.imageElement.src = webpPath;
                 this.imageElement.style.opacity = '1';
                 return;
             }
-        } catch (e) {
-            // WebP não encontrado, continua para PNG
-        }
+        } catch (e) { }
         
         try {
-            // Fallback para PNG
             const pngResponse = await fetch(pngPath, { method: 'HEAD' });
             if (pngResponse.ok) {
                 this.imageElement.src = pngPath;
                 this.imageElement.style.opacity = '1';
                 return;
             }
-        } catch (e) {
-            // PNG também não encontrado
-        }
+        } catch (e) { }
         
-        // Se nenhuma imagem foi encontrada, oculta
         this.imageElement.style.opacity = '0';
         console.warn(`Nenhuma imagem encontrada para ${basePath} (WebP ou PNG)`);
     }
 
-    // Método para adicionar ou atualizar informações de um quadro
     setFrameText(frameId, text) {
         if (!this.frameData[frameId]) {
             this.frameData[frameId] = {};

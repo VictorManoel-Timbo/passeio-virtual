@@ -3,7 +3,7 @@ export class Light {
         this.type = type;
         this.position = [0, 0, 0];
         this.color = [1.0, 1.0, 1.0];
-        this.direction = [0, -1, 0]; // Padrão: apontando para baixo
+        this.direction = [0, -1, 0];
         this.cutoff = Math.cos(60 * Math.PI / 180);
         this.time = 0;
     }

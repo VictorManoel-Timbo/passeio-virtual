@@ -44,7 +44,6 @@ export class Transform {
     ]);
   }
 
-  // Multiplica duas matrizes 4x4 (essencial para combinar Câmera e Objeto)
   static multiplyMatrices(a, b) {
     const out = new Float32Array(16);
     for (let i = 0; i < 4; i++) { // linha
@@ -59,7 +58,6 @@ export class Transform {
     return out;
   }
 
-  // Cria a Matriz de Projeção Perspectiva
   static perspective(fovDeg, aspect, near, far) {
     const f = 1.0 / Math.tan((fovDeg * Math.PI / 180) / 2);
     const rangeInv = 1.0 / (near - far);
@@ -72,13 +70,12 @@ export class Transform {
     ]);
   }
 
-  // Translada (move) uma matriz
   static translate(m, x, y, z) {
     return new Float32Array([
       1, 0, 0, 0,
       0, 1, 0, 0,
       0, 0, 1, 0,
-      x, y, z, 1  // Translação fica aqui para Column-Major
+      x, y, z, 1  
     ]);
   }
 
@@ -125,7 +122,6 @@ export class Transform {
     const inv = new Float32Array(16);
     const out = new Float32Array(16);
 
-    // Cálculo dos 16 cofatores (determinantes 3x3 com sinal)
     inv[0] = m[5] * m[10] * m[15] - m[5] * m[11] * m[14] - m[9] * m[6] * m[15] + m[9] * m[7] * m[14] + m[13] * m[6] * m[11] - m[13] * m[7] * m[10];
     inv[4] = -m[4] * m[10] * m[15] + m[4] * m[11] * m[14] + m[8] * m[6] * m[15] - m[8] * m[7] * m[14] - m[12] * m[6] * m[11] + m[12] * m[7] * m[10];
     inv[8] = m[4] * m[9] * m[15] - m[4] * m[11] * m[13] - m[8] * m[5] * m[15] + m[8] * m[7] * m[13] + m[12] * m[5] * m[11] - m[12] * m[7] * m[9];
@@ -146,10 +142,9 @@ export class Transform {
     inv[11] = -m[0] * m[5] * m[11] + m[0] * m[7] * m[9] + m[4] * m[1] * m[11] - m[4] * m[3] * m[9] - m[8] * m[1] * m[7] + m[8] * m[3] * m[5];
     inv[15] = m[0] * m[5] * m[10] - m[0] * m[6] * m[9] - m[4] * m[1] * m[10] + m[4] * m[2] * m[9] + m[8] * m[1] * m[6] - m[8] * m[2] * m[5];
 
-    // Cálculo do determinante global
     let det = m[0] * inv[0] + m[1] * inv[4] + m[2] * inv[8] + m[3] * inv[12];
 
-    if (det === 0) return this.identity(); // Matriz não inversível
+    if (det === 0) return this.identity(); 
 
     det = 1.0 / det;
     for (let i = 0; i < 16; i++) out[i] = inv[i] * det;

@@ -114,8 +114,6 @@ class App {
     const objDoc = new OBJDoc(modelCfg.path);
     const objText = await (await fetch(modelCfg.path)).text();
 
-    // Importante: Use escala 1.0 aqui para pegar o tamanho original (raw)
-    // A escala do jogo será aplicada depois no Scenario.js
     await objDoc.parse(objText, 1.0, false);
 
     while (!objDoc.isMTLComplete()) {
@@ -126,18 +124,14 @@ class App {
     const materialsMap = objDoc.getMaterialsInfo();
     const modelTextureDict = await this.resolveModelTextures(materialsMap, folderPath);
 
-    // Pega a geometria
     const drawingInfo = objDoc.getDrawingInfoGrouped();
 
-    // --- NOVO CÓDIGO AQUI ---
-    // Calcula a caixa de colisão usando o método que acabamos de criar
     const bounds = this.calculateBoundingBox(drawingInfo);
-    // ------------------------
 
     return {
       mesh: new Mesh(this.gl, drawingInfo),
       textures: modelTextureDict,
-      bounds: bounds // <--- Adiciona a caixa ao objeto retornado
+      bounds: bounds
     };
   }
 
@@ -145,9 +139,6 @@ class App {
     let minX = Infinity, minY = Infinity, minZ = Infinity;
     let maxX = -Infinity, maxY = -Infinity, maxZ = -Infinity;
 
-    // --- CORREÇÃO AQUI ---
-    // Verifica se é um Array. Se não for (é um objeto único), coloca dentro de um array [].
-    // Se for nulo ou indefinido, usa um array vazio [].
     let groups = [];
 
     if (Array.isArray(drawingInfo)) {
@@ -156,9 +147,7 @@ class App {
       groups = [drawingInfo];
     }
 
-    // Agora iteramos sobre 'groups' que garantimos ser uma lista
     for (const group of groups) {
-      // Proteção caso o grupo não tenha vértices
       if (!group.vertices) continue;
 
       const vertices = group.vertices;
@@ -177,7 +166,6 @@ class App {
       }
     }
 
-    // Se nenhum vértice foi encontrado (minX continua Infinity), retorna caixa zerada
     if (minX === Infinity) {
       return { min: [0, 0, 0], max: [0, 0, 0] };
     }
@@ -228,19 +216,19 @@ class App {
   createProgram(vs, fs) {
     const gl = this.gl;
 
-    // 1. Compilar Shaders
+    // Compilar Shaders
     const vShader = this._compileShader(gl.VERTEX_SHADER, vs);
     const fShader = this._compileShader(gl.FRAGMENT_SHADER, fs);
 
     if (!vShader || !fShader) return null;
 
-    // 2. Criar e Linkar o Programa
+    // Criar e Linkar o Programa
     const prog = gl.createProgram();
     gl.attachShader(prog, vShader);
     gl.attachShader(prog, fShader);
     gl.linkProgram(prog);
 
-    // 3. Verificar linkagem
+    // Verificar linkagem
     if (gl.getProgramParameter(prog, gl.LINK_STATUS)) {
       return prog;
     }
@@ -250,7 +238,6 @@ class App {
     return null;
   }
 
-  // Função auxiliar para evitar repetição de código
   _compileShader(type, source) {
     const gl = this.gl;
     const shader = gl.createShader(type);
@@ -279,7 +266,6 @@ class App {
       u_ModelMatrix: this.gl.getUniformLocation(this.program, 'u_ModelMatrix'),
       u_NormalMatrix: this.gl.getUniformLocation(this.program, 'u_NormalMatrix'),
 
-      // Uniforms (Phong Lighting)
       u_ViewPos: this.gl.getUniformLocation(this.program, 'u_ViewPos'),
       u_Sampler: this.gl.getUniformLocation(this.program, "u_Sampler"),
       u_UseTexture: this.gl.getUniformLocation(this.program, "u_UseTexture"),
@@ -299,31 +285,24 @@ class App {
     const oldX = this.camera.position[0];
     const oldZ = this.camera.position[2];
 
-    // 2. A Câmera processa o input do usuário 
-    // Isso garante que a intenção do usuário seja calculada
     this.camera.update(deltaTime, this.keys);
 
     // Se o cenário ainda não carregou, não faz colisão
     if (!this.scenario) return;
 
-    // 3. Atualiza objetos do cenário (luzes orbitando, etc)
     this.scenario.update(deltaTime);
 
-    // --- LÓGICA DE COLISÃO COM DESLIZAMENTO ---
-
-    // A. Verifica colisão no eixo X
+    // --- COLISÃO COM DESLIZAMENTO ---
+    // Verifica colisão no eixo X
     if (this.scenario.checkCollision(this.camera.position[0], oldZ)) {
-      // Se bater movendo em X, cancela SÓ o movimento X
       this.camera.position[0] = oldX;
     }
 
-    // B. Verifica colisão no eixo Z
+    // Verifica colisão no eixo Z
     if (this.scenario.checkCollision(this.camera.position[0], this.camera.position[2])) {
-      // Se bater movendo em Z, cancela SÓ o movimento Z
       this.camera.position[2] = oldZ;
     }
 
-    // --- ATUALIZA HUD ---
     this.hud.update(this.camera.position, this.scenario.framePositions);
   }
 
@@ -334,39 +313,12 @@ class App {
 
     const viewProjMatrix = this.camera.viewProjMatrix;
 
-    // Enviar a posição da câmera é necessária para o Especular
     this.gl.uniform3fv(this.locations.u_ViewPos, new Float32Array(this.camera.position));
 
     if (this.scenario) {
       this.scenario.draw(this.gl, this.locations, viewProjMatrix);
     }
 
-  }
-
-  cleanup() { //Esse tem que ser revisado
-    console.log("Iniciando limpeza de recursos...");
-
-    // 1. Para o loop de renderização
-    if (this.requestID) {
-      cancelAnimationFrame(this.requestID);
-    }
-
-
-    // 3. Deleta o programa de Shader
-    if (this.program) {
-      this.gl.deleteProgram(this.program);
-    }
-
-    // 4. Remove eventos globais
-    window.removeEventListener('keydown', this._keyDownRef);
-    window.removeEventListener('keyup', this._keyUpRef);
-
-    this.gl.bindBuffer(this.gl.ARRAY_BUFFER, null);
-    this.gl.useProgram(null);
-
-    this.locations = null;
-
-    console.log("GPU e Memória limpas.");
   }
 
   start(now = 0) {

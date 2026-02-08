@@ -58,7 +58,7 @@ export class Geometry {
             -w, -h, -d, -w, -h, d, -w, h, d, -w, -h, -d, -w, h, d, -w, h, -d
         ]);
 
-        // Normais (vetores perpendiculares a cada face)
+        // Normais de cada face
         const n = new Float32Array([
             0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 1, // Frente
             0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, // Atrás
@@ -68,7 +68,7 @@ export class Geometry {
             -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0, -1, 0, 0  // Esquerda
         ]);
 
-        // Mapeamento UV para as 6 faces do cubo
+        // Mapeamento UV 
         const texCoords = new Float32Array(36 * 2);
         const faceUVs = [0, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 0];
         for (let i = 0; i < 6; i++) {
@@ -105,7 +105,7 @@ export class Geometry {
                 const y = cosTheta;
                 const z = sinPhi * sinTheta;
 
-                // Vértices e Normais (em uma esfera centrada em 0, a normal é a própria posição normalizada)
+                // Vértices e Normais
                 vertices.push(radius * x, radius * y, radius * z);
                 normals.push(x, y, z);
 
@@ -127,7 +127,6 @@ export class Geometry {
                 const first = lat * (segments + 1) + lon;
                 const second = first + segments + 1;
 
-                // Definimos dois triângulos por "quadrado" da grade
                 const indices = [first, second, first + 1, second, second + 1, first + 1];
 
                 indices.forEach(idx => {
@@ -219,7 +218,7 @@ export class Geometry {
                 const z = Math.sin(phi) * sinTheta;
 
                 vertices.push(radius * x, radius * y, radius * z);
-                // Normais apontando para DENTRO para reagir à luz interna
+                // Normais apontando para dentro para reagir à luz interna
                 normals.push(-x, -y, -z);
                 colors.push(...color);
                 uvs.push(lon / segments, 1 - (lat / (segments / 2)));
@@ -236,7 +235,7 @@ export class Geometry {
                 const first = lat * (segments + 1) + lon;
                 const second = first + segments + 1;
 
-                // ORDEM INVERTIDA: Isso faz a "frente" da face ser o interior
+                // Faz a "frente" da face ser o interior
                 const indices = [first, first + 1, second, second, first + 1, second + 1];
 
                 indices.forEach(idx => {

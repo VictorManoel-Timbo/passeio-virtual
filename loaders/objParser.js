@@ -38,7 +38,7 @@ class Material {
     constructor(name, r, g, b, a) {
         this.name = name;
         this.color = { r, g, b, a };
-        this.map_Kd = null; // Caminho da imagem da textura
+        this.map_Kd = null; 
     }
 }
 
@@ -159,7 +159,6 @@ export class OBJDoc {
                         const r = sp.getFloat();
                         const g = sp.getFloat();
                         const b = sp.getFloat();
-                        // Só atualiza se os valores forem válidos (não NaN)
                         if (!isNaN(r)) {
                             currentMaterial.color = { r: r, g: g, b: b, a: 1.0 };
                         }
@@ -270,13 +269,12 @@ export class OBJDoc {
                         groups[mtlName].texCoords.push(0, 0);
                     }
 
-                    // Cores (do MTL)
+                    // Cores do MTL
                     groups[mtlName].colors.push(color.r, color.g, color.b, color.a);
                 }
             }
         }
 
-        // Converte para TypedArrays
         for (let mtl in groups) {
             groups[mtl].vertices = new Float32Array(groups[mtl].vertices);
             groups[mtl].normals = new Float32Array(groups[mtl].normals);
