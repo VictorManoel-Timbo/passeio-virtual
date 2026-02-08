@@ -1,4 +1,4 @@
-# Exposição do Zodíaco — Passeio Virtual 3D
+# Museu do Zodíaco — Passeio Virtual 3D
 
 **Descrição**
 

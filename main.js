@@ -89,9 +89,7 @@ class App {
     this.program = this.createProgram(vsSource, fsSource);
     this.gl.useProgram(this.program);
     this.locations = this.getLocations();
-    this.camera = new Camera(this.gl);
 
-    this.gl.clearColor(0.1, 0.1, 0.1, 1.0);
     this.gl.enable(this.gl.DEPTH_TEST);
     this.gl.enable(this.gl.CULL_FACE);
     this.gl.cullFace(this.gl.BACK);
